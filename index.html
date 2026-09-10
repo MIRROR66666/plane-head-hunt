@@ -1,0 +1,384 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#13201c" />
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+    <title>寻机头</title>
+    <link rel="stylesheet" href="styles.css?v=20260910-7" />
+  </head>
+  <body class="intro-active">
+    <section id="welcomeView" class="welcome-view" aria-labelledby="welcomeTitle">
+      <header class="welcome-header">
+        <div class="welcome-brand">
+          <span class="welcome-brand-code">FIELD GAME 01</span>
+          <strong>寻机头</strong>
+        </div>
+        <div class="welcome-header-meta"><span aria-hidden="true"></span>逻辑推理对战</div>
+      </header>
+
+      <main class="welcome-main">
+        <div class="welcome-hero">
+          <div class="welcome-logo-stage" aria-hidden="true">
+            <span class="welcome-target-ring"></span>
+            <div id="welcomePlaneLogo" class="welcome-plane-logo"></div>
+          </div>
+          <p class="welcome-eyebrow">TACTICAL LOGIC GAME</p>
+          <h1 id="welcomeTitle">寻机头</h1>
+          <p class="welcome-tagline">隐蔽部署你的编队，在有限线索中率先锁定敌方机头。</p>
+        </div>
+
+        <section class="welcome-rules" aria-label="游戏规则速览">
+          <article>
+            <span class="welcome-rule-index">01</span>
+            <div><strong>秘密布阵</strong><p>选择机型与朝向，把整支编队藏进自己的空域。</p></div>
+          </article>
+          <article>
+            <span class="welcome-rule-index">02</span>
+            <div><strong>轮流侦查</strong><p>每回合攻击一个坐标，根据击空与机身线索继续推理。</p></div>
+          </article>
+          <article>
+            <span class="welcome-rule-index">03</span>
+            <div><strong>锁定机头</strong><p>爆炸标记代表机头；率先找到全部敌方机头即可获胜。</p></div>
+          </article>
+        </section>
+
+        <div class="welcome-actions">
+          <button id="welcomeStartButton" class="welcome-action is-start" type="button">
+            <span><strong>开始游戏</strong><small>直接进入布阵</small></span><b aria-hidden="true">→</b>
+          </button>
+          <button id="welcomeTutorialButton" class="welcome-action is-tutorial" type="button">
+            <span><strong>新手教程</strong><small>跟随指引完成演练</small></span><b aria-hidden="true">?</b>
+          </button>
+        </div>
+        <p class="welcome-footnote">3 种难度 · 6 款机型 · 支持电脑与手机</p>
+      </main>
+    </section>
+
+    <section id="tutorialView" class="tutorial-view" aria-labelledby="tutorialTitle" hidden>
+      <header class="tutorial-header">
+        <div class="tutorial-brand"><span aria-hidden="true">✦</span><strong id="tutorialTitle">寻机头 · 新手教程</strong></div>
+        <div class="tutorial-header-actions">
+          <span id="tutorialStepCount">第 1 步 / 共 4 步</span>
+          <button id="tutorialSkipButton" class="tutorial-skip" type="button">跳过教程</button>
+          <button id="tutorialExitButton" class="tutorial-exit" type="button" aria-label="退出教程">×</button>
+        </div>
+      </header>
+
+      <main class="tutorial-shell">
+        <div class="tutorial-progress" aria-label="教程进度">
+          <span data-tutorial-progress="0"><b>01</b>认识目标</span>
+          <span data-tutorial-progress="1"><b>02</b>部署飞机</span>
+          <span data-tutorial-progress="2"><b>03</b>发起侦查</span>
+          <span data-tutorial-progress="3"><b>04</b>掌握规则</span>
+        </div>
+
+        <div class="tutorial-stage">
+          <section class="tutorial-step" data-tutorial-step="0">
+            <div class="tutorial-copy">
+              <p class="tutorial-step-label">STEP 01 · 任务目标</p>
+              <h2>先认识飞机的致命点</h2>
+              <p>每架飞机由一个机头和多个机身格组成。你不必打中全部机身，只要找到机头，就能击落这架飞机。</p>
+              <div class="tutorial-callout"><strong>获胜条件</strong><span>在对手之前找到全部敌方机头。</span></div>
+            </div>
+            <div class="tutorial-demo tutorial-objective-demo">
+              <div id="tutorialPlaneOverview" class="tutorial-plane-overview" aria-label="经典型飞机示意"></div>
+              <div class="tutorial-marker-list">
+                <span><i class="guide-mark miss" aria-hidden="true">·</i><b>灰点</b><small>击空</small></span>
+                <span><i class="guide-mark hit" aria-hidden="true">·</i><b>绿点</b><small>机身</small></span>
+                <span><i class="guide-mark head" aria-hidden="true">✹</i><b>爆炸</b><small>机头</small></span>
+              </div>
+            </div>
+          </section>
+
+          <section class="tutorial-step" data-tutorial-step="1" hidden>
+            <div class="tutorial-copy">
+              <p class="tutorial-step-label">STEP 02 · 布阵演练</p>
+              <h2>选择朝向，再确定机头</h2>
+              <p>先用方向按钮调整飞机朝向，然后点击棋盘中央闪烁的 <strong>D4</strong>。深绿色格是机头，浅绿色格是机身。</p>
+              <div class="tutorial-direction-row" role="group" aria-label="教程飞机朝向">
+                <button class="is-active" data-tutorial-direction="N" type="button" aria-label="机头向北">↑</button>
+                <button data-tutorial-direction="E" type="button" aria-label="机头向东">→</button>
+                <button data-tutorial-direction="S" type="button" aria-label="机头向南">↓</button>
+                <button data-tutorial-direction="W" type="button" aria-label="机头向西">←</button>
+              </div>
+              <p id="tutorialDeployFeedback" class="tutorial-feedback" aria-live="polite">当前机头向北，请点击 D4 完成部署。</p>
+            </div>
+            <div class="tutorial-demo tutorial-board-demo">
+              <div id="tutorialDeployBoard" class="tutorial-board" role="grid" aria-label="教程布阵棋盘"></div>
+            </div>
+          </section>
+
+          <section class="tutorial-step" data-tutorial-step="2" hidden>
+            <div class="tutorial-copy">
+              <p class="tutorial-step-label">STEP 03 · 侦查演练</p>
+              <h2>根据回报缩小范围</h2>
+              <p>实战中，每次点击都会得到一种回报。请按照指令依次点击高亮坐标，体验三种结果。</p>
+              <div class="tutorial-shot-order">
+                <span data-shot-order="0"><b>B2</b>击空</span>
+                <span data-shot-order="1"><b>C3</b>机身</span>
+                <span data-shot-order="2"><b>D4</b>机头</span>
+              </div>
+              <p id="tutorialAttackFeedback" class="tutorial-feedback" aria-live="polite">第一发：点击 B2。</p>
+            </div>
+            <div class="tutorial-demo tutorial-board-demo">
+              <div id="tutorialAttackBoard" class="tutorial-board tutorial-attack-board" role="grid" aria-label="教程侦查棋盘"></div>
+            </div>
+          </section>
+
+          <section class="tutorial-step" data-tutorial-step="3" hidden>
+            <div class="tutorial-copy">
+              <p class="tutorial-step-label">STEP 04 · 难度规则</p>
+              <h2>不同空域，不同重叠规则</h2>
+              <p>飞机可以相邻；是否能够重叠，由当前难度决定。实战中可随时打开右上角设置返回布阵。</p>
+              <div class="tutorial-callout"><strong>行动顺序</strong><span>你攻击一次，敌方再攻击一次，直到一方全部机头被找到。</span></div>
+            </div>
+            <div class="tutorial-demo tutorial-mode-demo">
+              <div><b>简单</b><strong>9 × 9 · 3 架</strong><p>任何部位都不能重叠</p></div>
+              <div><b>一般</b><strong>12 × 12 · 4 架</strong><p>仅机身之间可以重叠</p></div>
+              <div><b>困难</b><strong>15 × 15 · 5 架</strong><p>机头与机身均可重叠</p></div>
+            </div>
+          </section>
+        </div>
+
+        <div class="tutorial-navigation">
+          <button id="tutorialBackButton" class="tutorial-nav-button is-back" type="button" disabled>← 上一步</button>
+          <span id="tutorialNavHint">认识机头、机身与战果标记</span>
+          <button id="tutorialNextButton" class="tutorial-nav-button is-next" type="button">开始学习 →</button>
+        </div>
+      </main>
+    </section>
+
+    <header class="topbar">
+      <a id="gameHomeLink" class="brand" href="#" aria-label="返回寻机头首页" title="返回首页">
+        <span class="brand-mark" aria-hidden="true">✦</span>
+        <span>寻机头</span>
+      </a>
+      <div class="mission-meta" aria-label="当前任务">
+        <span class="live-dot" aria-hidden="true"></span>
+        <span id="missionLabel">布阵阶段</span>
+        <span class="divider" aria-hidden="true"></span>
+        <span id="airspaceLabel">9 × 9 空域</span>
+      </div>
+      <button class="icon-button" id="soundButton" type="button" aria-label="关闭音效" title="音效">
+        <span aria-hidden="true">◖</span>
+      </button>
+    </header>
+
+    <main class="app-shell">
+      <section class="briefing" aria-labelledby="pageTitle">
+        <div>
+          <p class="eyebrow">MISSION 01 · 南方空域</p>
+          <h1 id="pageTitle">锁定机头，击落敌机</h1>
+        </div>
+        <div class="status-block">
+          <span class="status-kicker">当前指令</span>
+          <strong id="statusTitle">部署你的飞行编队</strong>
+          <p id="statusText">选择方向，再点击棋盘确定机头位置。</p>
+        </div>
+      </section>
+
+      <section class="mark-guide" aria-labelledby="markGuideTitle">
+        <span id="markGuideTitle" class="mark-guide-label">战果标记</span>
+        <div class="mark-guide-item">
+          <i class="guide-mark miss" aria-hidden="true">·</i>
+          <span><strong>灰点 = 击空</strong><small>该坐标没有飞机</small></span>
+        </div>
+        <div class="mark-guide-item">
+          <i class="guide-mark hit" aria-hidden="true">·</i>
+          <span><strong>绿点 = 机身</strong><small>命中机身，飞机尚未击落</small></span>
+        </div>
+        <div class="mark-guide-item">
+          <i class="guide-mark head" aria-hidden="true">✹</i>
+          <span><strong>爆炸 = 机头</strong><small>机头炸毁，该飞机已击落</small></span>
+        </div>
+      </section>
+
+      <section id="setupView" class="game-layout setup-layout">
+        <div class="board-panel">
+          <div class="panel-heading">
+            <div>
+              <span class="panel-index">01</span>
+              <h2>我方空域</h2>
+            </div>
+            <span class="coordinates-note">横 A–I · 纵 1–9</span>
+          </div>
+          <div class="board-wrap">
+            <div id="setupBoard" class="board" role="grid" aria-label="我方布阵棋盘"></div>
+          </div>
+        </div>
+
+        <aside class="control-panel">
+          <div class="control-section mode-section">
+            <span class="section-label">任务难度</span>
+            <div class="mode-switch" role="radiogroup" aria-label="选择游戏难度">
+              <button class="mode-button is-active" data-mode="easy" type="button" role="radio" aria-checked="true">
+                <span>简单</span><small>9×9 · 3 架</small>
+              </button>
+              <button class="mode-button" data-mode="normal" type="button" role="radio" aria-checked="false">
+                <span>一般</span><small>12×12 · 4 架</small>
+              </button>
+              <button class="mode-button" data-mode="hard" type="button" role="radio" aria-checked="false">
+                <span>困难</span><small>15×15 · 5 架</small>
+              </button>
+            </div>
+            <p id="modeSummary" class="mode-summary">2 种 10 格战机可选，任何部位都不能重叠。</p>
+          </div>
+
+          <div id="modelSection" class="control-section model-section">
+            <div class="control-title-row">
+              <span id="modelSectionLabel" class="section-label">本关机型</span>
+              <span id="modelCount" class="direction-name">10 格</span>
+            </div>
+            <div id="modelPicker" class="model-picker" role="radiogroup" aria-label="选择飞机形状"></div>
+          </div>
+
+          <div class="control-section">
+            <span class="section-label">编队状态</span>
+            <div id="fleetSlots" class="fleet-slots" aria-live="polite"></div>
+          </div>
+
+          <div class="control-section">
+            <div class="control-title-row">
+              <span class="section-label">机头朝向</span>
+              <span class="direction-tools">
+                <span id="directionName" class="direction-name">向北</span>
+                <span class="keyboard-hint"><kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> 键盘可调整</span>
+              </span>
+            </div>
+            <div class="direction-pad" role="group" aria-label="选择飞机朝向">
+              <button class="direction-button is-active" data-direction="N" type="button" aria-label="机头向北">↑</button>
+              <button class="direction-button" data-direction="E" type="button" aria-label="机头向东">→</button>
+              <button class="direction-button" data-direction="S" type="button" aria-label="机头向南">↓</button>
+              <button class="direction-button" data-direction="W" type="button" aria-label="机头向西">←</button>
+            </div>
+          </div>
+
+          <div class="silhouette" aria-label="飞机占用格示意">
+            <div id="modelPreview" class="model-preview" aria-hidden="true"></div>
+            <p id="placementRule">机头是唯一致命点。飞机之间不能重叠，但可以相邻。</p>
+          </div>
+
+          <button id="startButton" class="primary-button" type="button" disabled>
+            <span>开始侦察</span><span aria-hidden="true">→</span>
+          </button>
+          <button id="randomButton" class="text-button" type="button">随机布阵</button>
+        </aside>
+      </section>
+
+      <section id="battleView" class="battle-view" hidden>
+        <div class="battle-toolbar">
+          <div class="turn-indicator">
+            <span id="turnLamp" class="turn-lamp"></span>
+            <span id="turnText">轮到你行动</span>
+          </div>
+          <div class="battle-toolbar-actions">
+            <div class="battle-stats">
+              <span>回合 <strong id="roundCount">01</strong></span>
+              <span>命中率 <strong id="accuracy">0%</strong></span>
+            </div>
+            <button id="battleMenuButton" class="battle-menu-button" type="button" aria-label="打开游戏设置" title="游戏设置">
+              <span aria-hidden="true">⚙</span><span>设置</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="mobile-tabs" role="tablist" aria-label="切换战场视图">
+          <button class="mobile-tab is-active" data-tab="enemy" type="button" role="tab">敌方空域</button>
+          <button class="mobile-tab" data-tab="player" type="button" role="tab">我方空域</button>
+        </div>
+
+        <div class="battle-grid">
+          <div class="board-panel battle-board is-mobile-active" data-battle-panel="enemy">
+            <div class="panel-heading">
+              <div><span class="panel-index danger">TARGET</span><h2>敌方空域</h2></div>
+              <span id="enemyRemaining" class="remaining">机头 3 / 3</span>
+            </div>
+            <div class="board-wrap">
+              <div id="enemyBoard" class="board board-enemy" role="grid" aria-label="敌方空域攻击棋盘"></div>
+            </div>
+          </div>
+
+          <div class="board-panel battle-board" data-battle-panel="player">
+            <div class="panel-heading">
+              <div><span class="panel-index ally">DEFENCE</span><h2>我方空域</h2></div>
+              <span id="playerRemaining" class="remaining">机头 3 / 3</span>
+            </div>
+            <div class="board-wrap">
+              <div id="playerBoard" class="board board-player" role="grid" aria-label="我方防御棋盘"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="combat-log" aria-live="polite">
+          <span class="log-label">战况</span>
+          <i id="combatMark" class="combat-mark" aria-hidden="true" hidden></i>
+          <p id="combatMessage">无线电静默。选择敌方空域中的一个坐标。</p>
+        </div>
+      </section>
+    </main>
+
+    <footer class="legend-bar">
+      <span><i class="legend-mark miss">·</i>灰点 = 击空</span>
+      <span><i class="legend-mark hit">·</i>绿点 = 机身</span>
+      <span><i class="legend-mark head">✹</i>爆炸 = 机头</span>
+      <button id="rulesButton" class="rules-button" type="button">作战规则 <span aria-hidden="true">?</span></button>
+    </footer>
+
+    <section id="resultOverlay" class="result-overlay" aria-labelledby="resultTitle" aria-live="assertive" hidden>
+      <div class="result-panel" role="dialog" aria-modal="true">
+        <div class="result-heading">
+          <span id="resultSeal" class="result-seal">胜</span>
+          <div>
+            <p class="eyebrow">MISSION COMPLETE</p>
+            <h2 id="resultTitle">空域已肃清</h2>
+            <p id="resultText">你率先锁定了全部敌方机头。</p>
+          </div>
+        </div>
+        <div id="resultStats" class="result-stats"></div>
+        <div class="result-actions">
+          <button id="restartButton" class="primary-button" type="button">再来一局 <span aria-hidden="true">↻</span></button>
+          <span class="next-mission-label">选择下一项任务</span>
+          <div id="nextModeActions" class="next-mode-actions"></div>
+        </div>
+      </div>
+    </section>
+
+    <dialog id="rulesDialog" class="dialog rules-dialog">
+      <button class="dialog-close" data-close-dialog type="button" aria-label="关闭">×</button>
+      <p class="eyebrow">FIELD MANUAL</p>
+      <h2>作战规则</h2>
+      <ol>
+        <li><strong>秘密布阵</strong><span>简单模式禁止重叠；一般模式仅机身可重叠；困难模式所有部位均可重叠。</span></li>
+        <li><strong>选择机型</strong><span>每个模式都可以从当前可用机型中选择形状，再旋转并部署。</span></li>
+        <li><strong>轮流轰炸</strong><span>点击一个未知坐标，结果分为击空、击中机身、锁定机头。</span></li>
+        <li><strong>锁定胜利</strong><span>率先命中对方全部机头，即可获胜；一个坐标可能同时击落多架困难模式战机。</span></li>
+      </ol>
+      <button class="primary-button" data-close-dialog type="button">明白</button>
+    </dialog>
+
+    <dialog id="battleMenuDialog" class="dialog battle-menu-dialog">
+      <button class="dialog-close" data-close-dialog type="button" aria-label="关闭设置">×</button>
+      <p class="eyebrow">MISSION PAUSED</p>
+      <h2>任务设置</h2>
+      <p>可以继续交战，或回到布阵调整你的飞机。</p>
+      <div class="battle-menu-actions">
+        <button id="continueBattleButton" class="dialog-action is-primary" type="button">
+          <span>继续游戏</span><small>返回当前交战</small>
+        </button>
+        <button id="redeployButton" class="dialog-action" type="button">
+          <span>返回布阵</span><small>保留当前编队，可逐架撤回调整</small>
+        </button>
+        <button id="restartBattleButton" class="dialog-action is-danger" type="button">
+          <span>重新开始</span><small>清空编队，重新选择与部署</small>
+        </button>
+      </div>
+    </dialog>
+
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    <script src="game.js?v=20260910-7"></script>
+  </body>
+</html>
