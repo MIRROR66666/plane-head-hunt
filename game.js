@@ -2,6 +2,10 @@ const COLUMNS = "ABCDEFGHIJKLMNO";
 const DIRECTIONS = ["N", "E", "S", "W"];
 
 const MODELS = {
+  starter: {
+    name: "入门型",
+    cells: [[0, 0], [1, -1], [1, 0], [1, 1], [2, 0], [3, 0]]
+  },
   classic: {
     name: "经典型",
     cells: [[0, 0], [1, -2], [1, -1], [1, 0], [1, 1], [1, 2], [2, 0], [3, -1], [3, 0], [3, 1]]
@@ -32,11 +36,12 @@ const MODES = {
   easy: {
     name: "简单",
     size: 9,
-    fleet: 3,
-    models: ["classic", "arrow"],
+    fleet: 2,
+    models: ["starter"],
     overlap: "none",
-    summary: "2 种 10 格战机可选，任何部位都不能重叠。",
-    rule: "机头是唯一致命点。飞机之间不能重叠，但可以相邻。"
+    autoDirection: true,
+    summary: "2 架 6 格入门小飞机，点击机头位置后自动安排朝向。",
+    rule: "只需选择机头位置。系统会自动寻找可放置方向，飞机之间不能重叠。"
   },
   normal: {
     name: "一般",
@@ -45,6 +50,7 @@ const MODES = {
     models: ["classic", "delta", "swift", "arrow"],
     overlap: "body",
     summary: "4 种机型均不超过 10 格，仅机身之间可以重叠。",
+    tips: ["四架飞机", "四种机型可随机排列", "机身之间可以重叠"],
     rule: "机身可以互相覆盖；机头不能与任何飞机部位重叠。"
   },
   hard: {
@@ -53,13 +59,15 @@ const MODES = {
     fleet: 5,
     models: ["classic", "delta", "swift", "arrow", "scout", "bomber"],
     overlap: "all",
-    summary: "6–12 格多种机型，机头与机身均可任意重叠。",
+    summary: "6-12 格多种机型，机头与机身均可任意重叠。",
+    tips: ["五架飞机", "六种机型可随机排列", "机头与机身可以任意重叠"],
     rule: "所有部位都可以重叠；命中重合机头会一次击落多架飞机。"
   }
 };
 
 const state = {
   phase: "setup",
+  playMode: "solo",
   mode: "easy",
   direction: "N",
   selectedModel: "classic",
@@ -71,35 +79,113 @@ const state = {
   round: 1,
   sound: true,
   gameOver: false,
+  enemyHeadsRemaining: null,
   aiQueue: []
+};
+
+const multiplayer = {
+  peer: null,
+  connection: null,
+  role: null,
+  roomCode: "",
+  roomLink: "",
+  connected: false,
+  ready: false,
+  opponentReady: false,
+  pendingShot: null,
+  intentionalClose: false
 };
 
 const tutorialState = {
   step: 0,
+  mode: "easy",
   direction: "N",
-  deployed: false,
+  deployedCount: 0,
+  searchStarted: false,
   shotIndex: 0
 };
 
+const TUTORIAL_DEPLOYMENTS = [
+  { row: 2, col: 2, direction: "N" },
+  { row: 1, col: 4, direction: "E" }
+];
+
 const TUTORIAL_SHOTS = [
-  { row: 1, col: 1, result: "miss", text: "击空。灰点说明这里没有飞机，继续缩小范围。" },
-  { row: 2, col: 2, result: "hit", text: "命中机身。浅绿色提示机头就在附近。" },
-  { row: 3, col: 3, result: "head", text: "命中机头！爆炸标记表示这架飞机已被击落。" }
+  { row: 1, col: 1, result: "miss" },
+  { row: 2, col: 2, result: "hit" },
+  { row: 3, col: 3, result: "head" }
+];
+
+const TUTORIAL_REASONING = [
+  {
+    title: "第一步：检查 B2",
+    text: "点击 B2，判断这个坐标有没有飞机。"
+  },
+  {
+    title: "B2 击空：排除不可能位置",
+    text: "灰点表示 B2 没有飞机。排除所有覆盖 B2 的摆法，再点击 C3。"
+  },
+  {
+    title: "C3 命中机身：对照机型",
+    text: "绿点表示 C3 是机身。旋转右侧入门型，保留机身能覆盖 C3 的摆法，再验证候选机头 D4。"
+  },
+  {
+    title: "D4 找到机头：这架飞机已被击落",
+    text: "爆炸表示 D4 是机头。继续用灰点排除、绿点定位、机型比对，找到剩余机头。"
+  }
 ];
 
 const els = {
   welcomeView: document.querySelector("#welcomeView"),
   tutorialView: document.querySelector("#tutorialView"),
   welcomePlaneLogo: document.querySelector("#welcomePlaneLogo"),
+  tutorialBrandLogo: document.querySelector("#tutorialBrandLogo"),
+  gameBrandLogo: document.querySelector("#gameBrandLogo"),
   tutorialPlaneOverview: document.querySelector("#tutorialPlaneOverview"),
+  tutorialStarterPreview: document.querySelector("#tutorialStarterPreview"),
+  tutorialPlaneDirection: document.querySelector("#tutorialPlaneDirection"),
+  tutorialDirectionFeedback: document.querySelector("#tutorialDirectionFeedback"),
+  tutorialModeFeedback: document.querySelector("#tutorialModeFeedback"),
+  tutorialBattleEnemy: document.querySelector("#tutorialBattleEnemy"),
+  tutorialBattlePlayer: document.querySelector("#tutorialBattlePlayer"),
   welcomeStartButton: document.querySelector("#welcomeStartButton"),
   welcomeTutorialButton: document.querySelector("#welcomeTutorialButton"),
+  playModeDialog: document.querySelector("#playModeDialog"),
+  soloModeButton: document.querySelector("#soloModeButton"),
+  onlineModeButton: document.querySelector("#onlineModeButton"),
+  roomDialog: document.querySelector("#roomDialog"),
+  roomDialogEyebrow: document.querySelector("#roomDialogEyebrow"),
+  roomDialogTitle: document.querySelector("#roomDialogTitle"),
+  roomDialogText: document.querySelector("#roomDialogText"),
+  roomSharePanel: document.querySelector("#roomSharePanel"),
+  roomDialogCode: document.querySelector("#roomDialogCode"),
+  roomLinkInput: document.querySelector("#roomLinkInput"),
+  roomCopyButton: document.querySelector("#roomCopyButton"),
+  roomEnterButton: document.querySelector("#roomEnterButton"),
+  roomCancelButton: document.querySelector("#roomCancelButton"),
+  closeRoomDialogButton: document.querySelector("#closeRoomDialogButton"),
+  roomStrip: document.querySelector("#roomStrip"),
+  roomStatusTitle: document.querySelector("#roomStatusTitle"),
+  roomStatusText: document.querySelector("#roomStatusText"),
+  roomCodeLabel: document.querySelector("#roomCodeLabel"),
+  copyRoomLinkButton: document.querySelector("#copyRoomLinkButton"),
+  leaveRoomButton: document.querySelector("#leaveRoomButton"),
   tutorialSkipButton: document.querySelector("#tutorialSkipButton"),
   tutorialExitButton: document.querySelector("#tutorialExitButton"),
   tutorialStepCount: document.querySelector("#tutorialStepCount"),
   tutorialDeployBoard: document.querySelector("#tutorialDeployBoard"),
   tutorialAttackBoard: document.querySelector("#tutorialAttackBoard"),
+  tutorialAttackModel: document.querySelector("#tutorialAttackModel"),
+  tutorialReasoning: document.querySelector("#tutorialReasoning"),
+  tutorialReasoningTitle: document.querySelector("#tutorialReasoningTitle"),
   tutorialDeployFeedback: document.querySelector("#tutorialDeployFeedback"),
+  tutorialRandomDeployButton: document.querySelector("#tutorialRandomDeployButton"),
+  tutorialStartSearchButton: document.querySelector("#tutorialStartSearchButton"),
+  tutorialModelsButton: document.querySelector("#tutorialModelsButton"),
+  tutorialSettingsButton: document.querySelector("#tutorialSettingsButton"),
+  tutorialModelsPopover: document.querySelector("#tutorialModelsPopover"),
+  tutorialSettingsPopover: document.querySelector("#tutorialSettingsPopover"),
+  tutorialBattleModelShape: document.querySelector("#tutorialBattleModelShape"),
   tutorialAttackFeedback: document.querySelector("#tutorialAttackFeedback"),
   tutorialBackButton: document.querySelector("#tutorialBackButton"),
   tutorialNextButton: document.querySelector("#tutorialNextButton"),
@@ -116,6 +202,7 @@ const els = {
   modelPicker: document.querySelector("#modelPicker"),
   modelCount: document.querySelector("#modelCount"),
   modelPreview: document.querySelector("#modelPreview"),
+  directionSection: document.querySelector("#directionSection"),
   modeSummary: document.querySelector("#modeSummary"),
   placementRule: document.querySelector("#placementRule"),
   airspaceLabel: document.querySelector("#airspaceLabel"),
@@ -138,6 +225,10 @@ const els = {
   rulesDialog: document.querySelector("#rulesDialog"),
   battleMenuDialog: document.querySelector("#battleMenuDialog"),
   battleMenuButton: document.querySelector("#battleMenuButton"),
+  battleModelsControl: document.querySelector("#battleModelsControl"),
+  battleModelsPopover: document.querySelector("#battleModelsPopover"),
+  battleModelsButton: document.querySelector("#battleModelsButton"),
+  battleModelList: document.querySelector("#battleModelList"),
   continueBattleButton: document.querySelector("#continueBattleButton"),
   redeployButton: document.querySelector("#redeployButton"),
   restartBattleButton: document.querySelector("#restartBattleButton"),
@@ -146,6 +237,7 @@ const els = {
   resultText: document.querySelector("#resultText"),
   resultStats: document.querySelector("#resultStats"),
   restartButton: document.querySelector("#restartButton"),
+  nextMissionLabel: document.querySelector(".next-mission-label"),
   nextModeActions: document.querySelector("#nextModeActions"),
   rulesButton: document.querySelector("#rulesButton"),
   soundButton: document.querySelector("#soundButton"),
@@ -162,6 +254,310 @@ function key(row, col) {
 
 function label(row, col) {
   return `${COLUMNS[col]}${row + 1}`;
+}
+
+function isMultiplayer() {
+  return state.playMode === "online";
+}
+
+function roomPeerId(roomCode) {
+  return `plane-head-hunt-${roomCode}`;
+}
+
+function createRoomCode() {
+  const alphabet = "abcdefghjkmnpqrstuvwxyz23456789";
+  const bytes = new Uint8Array(8);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, value => alphabet[value % alphabet.length]).join("");
+}
+
+function buildRoomLink(roomCode) {
+  const url = new URL(window.location.href);
+  url.search = "";
+  url.hash = "";
+  url.searchParams.set("room", roomCode);
+  return url.toString();
+}
+
+function setRoomUrl(roomCode = "") {
+  const url = new URL(window.location.href);
+  if (roomCode) url.searchParams.set("room", roomCode);
+  else url.searchParams.delete("room");
+  window.history.replaceState({}, "", url);
+}
+
+function setRoomDialog({ title, text, eyebrow = "双人对战", share = false, enter = false }) {
+  els.roomDialogEyebrow.textContent = eyebrow;
+  els.roomDialogTitle.textContent = title;
+  els.roomDialogText.textContent = text;
+  els.roomSharePanel.hidden = !share;
+  els.roomEnterButton.hidden = !enter;
+  if (!els.roomDialog.open) els.roomDialog.showModal();
+}
+
+function setRoomStrip(status, title, text) {
+  els.roomStrip.hidden = false;
+  els.roomStrip.classList.toggle("is-connected", status === "connected");
+  els.roomStrip.classList.toggle("is-error", status === "error");
+  els.roomStatusTitle.textContent = title;
+  els.roomStatusText.textContent = text;
+  els.roomCodeLabel.textContent = `房间 ${multiplayer.roomCode || "----"}`;
+  els.copyRoomLinkButton.hidden = multiplayer.role !== "host";
+}
+
+function updateRoomStrip() {
+  if (!isMultiplayer()) {
+    els.roomStrip.hidden = true;
+    return;
+  }
+  if (!multiplayer.connected) {
+    setRoomStrip("waiting", multiplayer.role === "host" ? "等待朋友加入" : "正在加入房间", multiplayer.role === "host" ? "复制邀请链接发给朋友" : "正在连接房主");
+    return;
+  }
+  if (state.phase === "battle") {
+    setRoomStrip("connected", "双人对战进行中", state.turn === "player" ? "轮到你侦查" : "等待朋友行动");
+    return;
+  }
+  const readyText = multiplayer.ready ? "你已准备" : "你尚未准备";
+  const opponentText = multiplayer.opponentReady ? "朋友已准备" : "朋友正在布阵";
+  setRoomStrip("connected", "朋友已加入", `${readyText} · ${opponentText}`);
+}
+
+async function copyRoomLink() {
+  if (!multiplayer.roomLink) return;
+  try {
+    await navigator.clipboard.writeText(multiplayer.roomLink);
+  } catch (_) {
+    els.roomLinkInput.hidden = false;
+    els.roomLinkInput.select();
+    document.execCommand("copy");
+  }
+  showToast("邀请链接已复制");
+}
+
+function sendRoomMessage(message) {
+  if (!multiplayer.connection?.open) return false;
+  multiplayer.connection.send(message);
+  return true;
+}
+
+function resetMultiplayerRound() {
+  multiplayer.ready = false;
+  multiplayer.opponentReady = false;
+  multiplayer.pendingShot = null;
+  state.enemyHeadsRemaining = config().fleet;
+  updateRoomStrip();
+}
+
+function invalidateOnlineReady() {
+  if (!isMultiplayer() || !multiplayer.ready) return;
+  multiplayer.ready = false;
+  sendRoomMessage({ type: "ready", ready: false });
+  updateRoomStrip();
+}
+
+function updateOnlineControls() {
+  const guestLocked = isMultiplayer() && multiplayer.role === "guest";
+  document.querySelectorAll("[data-mode]").forEach(button => {
+    button.disabled = guestLocked;
+    button.title = guestLocked ? "难度由房主选择" : "";
+  });
+}
+
+function closeRoomDialog() {
+  if (els.roomDialog.open) els.roomDialog.close();
+}
+
+function prepareMultiplayer(role, roomCode) {
+  state.playMode = "online";
+  multiplayer.role = role;
+  multiplayer.roomCode = roomCode;
+  multiplayer.roomLink = buildRoomLink(roomCode);
+  multiplayer.connected = false;
+  multiplayer.intentionalClose = false;
+  multiplayer.ready = false;
+  multiplayer.opponentReady = false;
+  multiplayer.pendingShot = null;
+  state.enemyHeadsRemaining = config().fleet;
+  els.roomDialogCode.textContent = roomCode.toUpperCase();
+  els.roomLinkInput.value = multiplayer.roomLink;
+  setRoomUrl(roomCode);
+  returnToSetup(false, state.mode, { broadcast: false });
+  updateOnlineControls();
+  updateRoomStrip();
+}
+
+function createMultiplayerRoom() {
+  if (typeof Peer === "undefined") {
+    setRoomDialog({ title: "联机组件加载失败", text: "请检查网络后刷新页面重试。" });
+    return;
+  }
+  const roomCode = createRoomCode();
+  prepareMultiplayer("host", roomCode);
+  if (els.playModeDialog.open) els.playModeDialog.close();
+  setRoomDialog({ title: "正在创建房间", text: "正在生成邀请链接，请稍候。" });
+  const peer = new Peer(roomPeerId(roomCode));
+  multiplayer.peer = peer;
+  peer.on("open", () => {
+    setRoomDialog({ title: "房间已经建好", text: "把链接发给朋友。等待期间，你可以先进入布阵。", share: true, enter: true });
+    updateRoomStrip();
+  });
+  peer.on("connection", connection => {
+    if (multiplayer.connection?.open) {
+      connection.on("open", () => {
+        connection.send({ type: "room-full" });
+        connection.close();
+      });
+      return;
+    }
+    bindRoomConnection(connection);
+  });
+  bindPeerEvents(peer);
+}
+
+function joinMultiplayerRoom(roomCode) {
+  if (typeof Peer === "undefined") {
+    setRoomDialog({ title: "联机组件加载失败", text: "请检查网络后刷新页面重试。" });
+    return;
+  }
+  prepareMultiplayer("guest", roomCode);
+  setRoomDialog({ title: "正在加入房间", text: `正在连接房间 ${roomCode.toUpperCase()}。`, eyebrow: "收到朋友的邀请" });
+  const peer = new Peer();
+  multiplayer.peer = peer;
+  peer.on("open", () => bindRoomConnection(peer.connect(roomPeerId(roomCode), { reliable: true, serialization: "json" })));
+  bindPeerEvents(peer);
+}
+
+function bindPeerEvents(peer) {
+  peer.on("error", error => {
+    console.warn("[multiplayer] peer error", error.type, error.message);
+    if (multiplayer.intentionalClose) return;
+    const unavailable = error.type === "unavailable-id";
+    const missing = error.type === "peer-unavailable";
+    const title = unavailable ? "房间码发生冲突" : missing ? "没有找到这个房间" : "房间连接失败";
+    const text = unavailable ? "请重新创建一个房间。" : missing ? "请让房主保持页面打开，再重新进入邀请链接。" : "请检查网络后重试。";
+    setRoomDialog({ title, text });
+    setRoomStrip("error", title, text);
+  });
+}
+
+function bindRoomConnection(connection) {
+  multiplayer.connection = connection;
+  connection.on("open", () => {
+    multiplayer.connected = true;
+    updateRoomStrip();
+    sendRoomMessage({ type: "hello", mode: state.mode, role: multiplayer.role, ready: multiplayer.ready });
+    if (multiplayer.role === "guest") {
+      closeRoomDialog();
+      enterGame();
+      showToast("已加入朋友的房间");
+    } else {
+      setRoomDialog({ title: "朋友已经加入", text: "双方布置好飞机并准备后，房主先行动。", share: true, enter: true });
+      showToast("朋友已加入房间");
+    }
+  });
+  connection.on("data", handleRoomMessage);
+  connection.on("close", () => {
+    if (multiplayer.intentionalClose) return;
+    multiplayer.connected = false;
+    state.turn = "none";
+    updateRoomStrip();
+    setRoomStrip("error", "朋友已离开房间", "本局已暂停，可以退出后重新建房");
+    showToast("与朋友的连接已断开");
+    if (state.phase === "battle") renderBattle();
+  });
+  connection.on("error", () => {
+    console.warn("[multiplayer] data connection error");
+    if (!multiplayer.intentionalClose) setRoomStrip("error", "连接出现问题", "请检查双方网络");
+  });
+}
+
+function handleRoomMessage(message) {
+  if (!message || typeof message.type !== "string") return;
+  if (message.type === "room-full") {
+    setRoomDialog({ title: "房间已经满员", text: "这个房间已有两位玩家，请让朋友重新创建房间。" });
+    return;
+  }
+  if (message.type === "hello") {
+    multiplayer.opponentReady = Boolean(message.ready);
+    if (multiplayer.role === "guest" && MODES[message.mode]) setMode(message.mode, { broadcast: false, announce: false });
+    if (multiplayer.role === "host") sendRoomMessage({ type: "sync", mode: state.mode, ready: multiplayer.ready });
+    updateRoomStrip();
+    maybeStartOnlineBattle();
+    return;
+  }
+  if (message.type === "sync") {
+    multiplayer.opponentReady = Boolean(message.ready);
+    if (multiplayer.role === "guest" && MODES[message.mode]) setMode(message.mode, { broadcast: false, announce: false });
+    updateRoomStrip();
+    return;
+  }
+  if (message.type === "mode" && multiplayer.role === "guest" && MODES[message.mode]) {
+    multiplayer.ready = false;
+    multiplayer.opponentReady = false;
+    returnToSetup(false, message.mode, { broadcast: false });
+    showToast(`房主选择了${MODES[message.mode].name}模式`);
+    updateRoomStrip();
+    return;
+  }
+  if (message.type === "ready") {
+    multiplayer.opponentReady = Boolean(message.ready);
+    updateRoomStrip();
+    maybeStartOnlineBattle();
+    return;
+  }
+  if (message.type === "start") {
+    beginOnlineBattle(message.firstRole || "host");
+    return;
+  }
+  if (message.type === "shot") {
+    receiveOnlineShot(message);
+    return;
+  }
+  if (message.type === "shot-result") {
+    receiveOnlineShotResult(message);
+    return;
+  }
+  if (message.type === "reset") {
+    resetMultiplayerRound();
+    returnToSetup(Boolean(message.preserveFleet), MODES[message.mode] ? message.mode : state.mode, { broadcast: false });
+    showToast("朋友发起了新一局");
+    return;
+  }
+  if (message.type === "leave") {
+    multiplayer.connected = false;
+    setRoomStrip("error", "朋友已离开房间", "本局已暂停，可以退出后重新建房");
+  }
+}
+
+function maybeStartOnlineBattle() {
+  if (multiplayer.role !== "host" || !multiplayer.connected || !multiplayer.ready || !multiplayer.opponentReady || state.phase === "battle") return;
+  sendRoomMessage({ type: "start", firstRole: "host" });
+  beginOnlineBattle("host");
+}
+
+function disconnectMultiplayer({ keepView = false } = {}) {
+  multiplayer.intentionalClose = true;
+  if (multiplayer.connection?.open) multiplayer.connection.send({ type: "leave" });
+  multiplayer.connection?.close();
+  multiplayer.peer?.destroy();
+  multiplayer.peer = null;
+  multiplayer.connection = null;
+  multiplayer.role = null;
+  multiplayer.roomCode = "";
+  multiplayer.roomLink = "";
+  multiplayer.connected = false;
+  multiplayer.ready = false;
+  multiplayer.opponentReady = false;
+  multiplayer.pendingShot = null;
+  state.playMode = "solo";
+  state.enemyHeadsRemaining = null;
+  returnToSetup(false, state.mode, { broadcast: false });
+  els.roomStrip.hidden = true;
+  updateOnlineControls();
+  setRoomUrl();
+  closeRoomDialog();
+  if (!keepView) showWelcome();
 }
 
 function rotatePoint([row, col], direction) {
@@ -260,8 +656,7 @@ function drawPlanes(board, planes, revealAll = true) {
   });
 }
 
-function modelShape(modelId) {
-  const points = MODELS[modelId].cells;
+function shapeFromPoints(points) {
   const rows = points.map(([row]) => row);
   const cols = points.map(([, col]) => col);
   const minRow = Math.min(...rows);
@@ -269,6 +664,10 @@ function modelShape(modelId) {
   const minCol = Math.min(...cols);
   const maxCol = Math.max(...cols);
   return { points, minRow, minCol, rowCount: maxRow - minRow + 1, colCount: maxCol - minCol + 1 };
+}
+
+function modelShape(modelId, direction = "N") {
+  return shapeFromPoints(MODELS[modelId].cells.map(point => rotatePoint(point, direction)));
 }
 
 function modelShapeMarkup(modelId, className) {
@@ -279,9 +678,49 @@ function modelShapeMarkup(modelId, className) {
   return `<span class="model-shape ${className}" style="--shape-rows:${shape.rowCount};--shape-cols:${shape.colCount}">${cells}</span>`;
 }
 
+function directionalModelMarkup(modelId, direction, className) {
+  const shape = modelShape(modelId, direction);
+  const cells = shape.points.map(([row, col], index) =>
+    `<i class="${index === 0 ? "is-head" : ""}" style="grid-row:${row - shape.minRow + 1};grid-column:${col - shape.minCol + 1}"></i>`
+  ).join("");
+  return `<span class="model-shape ${className}" style="--shape-rows:${shape.rowCount};--shape-cols:${shape.colCount}">${cells}</span>`;
+}
+
+function battleModelBoardMarkup(modelId) {
+  const shape = modelShape(modelId);
+  const padding = 1;
+  const rows = shape.rowCount + padding * 2;
+  const cols = shape.colCount + padding * 2;
+  const occupied = new Map(shape.points.map(([row, col], index) => [
+    `${row - shape.minRow + padding},${col - shape.minCol + padding}`,
+    index === 0 ? "is-plane is-head" : "is-plane"
+  ]));
+  const cells = Array.from({ length: rows * cols }, (_, index) => {
+    const row = Math.floor(index / cols);
+    const col = index % cols;
+    return `<i class="${occupied.get(`${row},${col}`) || ""}"></i>`;
+  }).join("");
+  return `<span class="battle-model-board" style="--preview-rows:${rows};--preview-cols:${cols}" aria-hidden="true">${cells}</span>`;
+}
+
+function renderTutorialMiniBoard(element, variant) {
+  element.innerHTML = Array.from({ length: 25 }, (_, index) => {
+    const result = variant === "enemy" && index === 12 ? " hit" : variant === "player" && [7, 8, 12, 17].includes(index) ? " plane" : "";
+    return `<i class="${result.trim()}">${result.includes("hit") ? "·" : ""}</i>`;
+  }).join("");
+}
+
 function renderIntroVisuals() {
   els.welcomePlaneLogo.innerHTML = modelShapeMarkup("classic", "welcome-plane-shape");
-  els.tutorialPlaneOverview.innerHTML = modelShapeMarkup("classic", "tutorial-plane-shape");
+  els.tutorialBrandLogo.innerHTML = modelShapeMarkup("starter", "brand-plane-shape");
+  els.gameBrandLogo.innerHTML = modelShapeMarkup("starter", "brand-plane-shape");
+  els.tutorialPlaneOverview.innerHTML = modelShapeMarkup("starter", "tutorial-plane-shape");
+  els.tutorialStarterPreview.innerHTML = modelShapeMarkup("starter", "tutorial-starter-shape");
+  els.tutorialPlaneDirection.innerHTML = directionalModelMarkup("classic", tutorialState.direction, "tutorial-direction-shape");
+  els.tutorialAttackModel.innerHTML = directionalModelMarkup("starter", "S", "tutorial-attack-shape");
+  els.tutorialBattleModelShape.innerHTML = modelShapeMarkup("starter", "tutorial-battle-model-preview");
+  renderTutorialMiniBoard(els.tutorialBattleEnemy, "enemy");
+  renderTutorialMiniBoard(els.tutorialBattlePlayer, "player");
 }
 
 function enterGame() {
@@ -289,7 +728,7 @@ function enterGame() {
   els.welcomeView.hidden = true;
   els.tutorialView.hidden = true;
   window.scrollTo({ top: 0, behavior: "auto" });
-  if (state.phase === "battle" && state.turn === "enemy" && !state.gameOver && !enemyFireTimer) scheduleEnemyFire(300);
+  if (!isMultiplayer() && state.phase === "battle" && state.turn === "enemy" && !state.gameOver && !enemyFireTimer) scheduleEnemyFire(300);
   playTone(360, 0.08);
 }
 
@@ -310,15 +749,25 @@ function exitTutorial() {
 
 function openTutorial() {
   tutorialState.step = 0;
+  tutorialState.mode = "easy";
   tutorialState.direction = "N";
-  tutorialState.deployed = false;
+  tutorialState.deployedCount = 0;
+  tutorialState.searchStarted = false;
   tutorialState.shotIndex = 0;
   els.welcomeView.hidden = true;
   els.tutorialView.hidden = false;
   els.tutorialView.scrollTop = 0;
-  els.tutorialDeployFeedback.textContent = "当前机头向北，请点击 D4 完成部署。";
-  els.tutorialAttackFeedback.textContent = "第一发：点击 B2。";
+  els.tutorialDeployFeedback.textContent = "请在棋盘上点击 C3。";
+  els.tutorialAttackFeedback.textContent = TUTORIAL_REASONING[0].text;
+  closeTutorialToolbarPopovers();
+  document.querySelectorAll("[data-tutorial-mode]").forEach(button => {
+    const active = button.dataset.tutorialMode === "easy";
+    button.classList.toggle("is-active", active);
+    button.setAttribute("aria-checked", String(active));
+  });
+  els.tutorialModeFeedback.textContent = "简单：9×9 空域，2 架入门型飞机，系统自动安排朝向。";
   setTutorialDirection("N");
+  renderTutorialDeployBoard();
   renderTutorialAttackBoard();
   updateTutorialUI();
 }
@@ -331,48 +780,83 @@ function setTutorialDirection(direction) {
     button.setAttribute("aria-pressed", String(active));
   });
   const directionName = { N: "向北", E: "向东", S: "向南", W: "向西" }[direction];
-  els.tutorialDeployFeedback.textContent = tutorialState.deployed
-    ? `部署成功，当前机头${directionName}。你仍可切换方向观察形状。`
-    : `当前机头${directionName}，请点击 D4 完成部署。`;
-  renderTutorialDeployBoard();
+  els.tutorialDirectionFeedback.textContent = `当前机头${directionName}。`;
+  els.tutorialPlaneDirection.innerHTML = directionalModelMarkup("classic", direction, "tutorial-direction-shape");
 }
 
 function renderTutorialDeployBoard() {
   const size = 7;
-  const target = { row: 3, col: 3 };
-  const deployedCells = tutorialState.deployed
-    ? new Map(planeCells(target.row, target.col, tutorialState.direction, "classic").map(cell => [key(cell.row, cell.col), cell]))
-    : new Map();
+  const target = TUTORIAL_DEPLOYMENTS[tutorialState.deployedCount];
+  const deployedCells = new Map();
+  TUTORIAL_DEPLOYMENTS.slice(0, tutorialState.deployedCount).forEach(placement => {
+    planeCells(placement.row, placement.col, placement.direction, "starter").forEach(cell => {
+      deployedCells.set(key(cell.row, cell.col), cell);
+    });
+  });
   const cells = [];
   for (let row = 0; row < size; row += 1) {
     for (let col = 0; col < size; col += 1) {
       const planeCell = deployedCells.get(key(row, col));
-      const isTarget = !tutorialState.deployed && row === target.row && col === target.col;
+      const isTarget = target && row === target.row && col === target.col;
       const classes = ["tutorial-cell"];
       if (isTarget) classes.push("is-target");
       if (planeCell) classes.push(planeCell.head ? "plane-head" : "plane-body");
       const cellLabel = label(row, col);
-      cells.push(`<button class="${classes.join(" ")}" type="button" role="gridcell" data-r="${row}" data-c="${col}" data-label="${cellLabel}" aria-label="${cellLabel}${isTarget ? "，推荐机头位置" : ""}" ${tutorialState.deployed ? "disabled" : ""}></button>`);
+      cells.push(`<button class="${classes.join(" ")}" type="button" role="gridcell" data-r="${row}" data-c="${col}" data-label="${cellLabel}" aria-label="${cellLabel}${isTarget ? "，当前机头位置" : ""}" ${target ? "" : "disabled"}></button>`);
     }
   }
   els.tutorialDeployBoard.dataset.size = String(size);
   els.tutorialDeployBoard.innerHTML = cells.join("");
-  if (tutorialState.deployed) return;
+  const fleetSlots = document.querySelectorAll(".tutorial-mini-fleet span");
+  const screenStatus = document.querySelector(".tutorial-screen-bar span");
+  fleetSlots.forEach((slot, index) => {
+    const ready = index < tutorialState.deployedCount;
+    slot.classList.toggle("is-ready", ready);
+    slot.textContent = `战机 ${index + 1} · ${ready ? "已部署" : "待命"}`;
+  });
+  const remaining = TUTORIAL_DEPLOYMENTS.length - tutorialState.deployedCount;
+  screenStatus.textContent = remaining ? `简单 · 还需部署 ${remaining} 架` : "简单 · 布阵完成";
+  els.tutorialStartSearchButton.disabled = remaining > 0 || tutorialState.searchStarted;
+  els.tutorialStartSearchButton.classList.toggle("is-ready", remaining === 0 && !tutorialState.searchStarted);
+  els.tutorialStartSearchButton.textContent = tutorialState.searchStarted ? "已开始侦查" : "开始侦查";
+  els.tutorialRandomDeployButton.classList.toggle("is-complete", tutorialState.deployedCount === TUTORIAL_DEPLOYMENTS.length);
+  document.querySelectorAll("[data-deploy-task]").forEach((task, index) => {
+    const complete = index < tutorialState.deployedCount || (index === 2 && tutorialState.searchStarted);
+    task.classList.toggle("is-complete", complete);
+    task.classList.toggle("is-current", !complete && index === Math.min(tutorialState.deployedCount, 2));
+  });
+  if (!target) return;
   els.tutorialDeployBoard.querySelectorAll(".tutorial-cell").forEach(cell => {
     cell.addEventListener("click", () => {
       const row = Number(cell.dataset.r);
       const col = Number(cell.dataset.c);
       if (row !== target.row || col !== target.col) {
-        els.tutorialDeployFeedback.textContent = "这里不是指令坐标，请点击红框标出的 D4。";
+        els.tutorialDeployFeedback.textContent = `请点击 ${label(target.row, target.col)}。高亮格是当前机头位置。`;
         return;
       }
-      tutorialState.deployed = true;
-      els.tutorialDeployFeedback.textContent = "部署成功！深绿色是机头，浅绿色是机身。";
+      tutorialState.deployedCount += 1;
+      els.tutorialDeployFeedback.textContent = tutorialState.deployedCount < TUTORIAL_DEPLOYMENTS.length
+        ? "第一架已部署。现在点击 E2，部署第二架。"
+        : "两架飞机都已部署。点击右侧“开始侦查”完成这一步。";
       renderTutorialDeployBoard();
       updateTutorialUI();
       playTone(420, 0.06);
     });
   });
+}
+
+function closeTutorialToolbarPopovers() {
+  els.tutorialModelsPopover.hidden = true;
+  els.tutorialSettingsPopover.hidden = true;
+  els.tutorialModelsButton.setAttribute("aria-expanded", "false");
+  els.tutorialSettingsButton.setAttribute("aria-expanded", "false");
+}
+
+function toggleTutorialToolbarPopover(popover, button) {
+  const willOpen = popover.hidden;
+  closeTutorialToolbarPopovers();
+  popover.hidden = !willOpen;
+  button.setAttribute("aria-expanded", String(willOpen));
 }
 
 function renderTutorialAttackBoard() {
@@ -398,6 +882,7 @@ function renderTutorialAttackBoard() {
     item.classList.toggle("is-active", index === tutorialState.shotIndex);
     item.classList.toggle("is-complete", index < tutorialState.shotIndex);
   });
+  renderTutorialReasoning();
   if (!currentShot) return;
   els.tutorialAttackBoard.querySelectorAll(".tutorial-cell").forEach(cell => {
     cell.addEventListener("click", () => {
@@ -408,10 +893,6 @@ function renderTutorialAttackBoard() {
         return;
       }
       tutorialState.shotIndex += 1;
-      const nextShot = TUTORIAL_SHOTS[tutorialState.shotIndex];
-      els.tutorialAttackFeedback.textContent = nextShot
-        ? `${currentShot.text} 下一发点击 ${label(nextShot.row, nextShot.col)}。`
-        : `${currentShot.text} 侦查演练完成。`;
       renderTutorialAttackBoard();
       updateTutorialUI();
       playShotSound(currentShot.result);
@@ -419,24 +900,56 @@ function renderTutorialAttackBoard() {
   });
 }
 
+function renderTutorialReasoning() {
+  const reasoning = TUTORIAL_REASONING[tutorialState.shotIndex];
+  els.tutorialReasoning.dataset.reasoningStage = String(tutorialState.shotIndex);
+  els.tutorialReasoningTitle.textContent = reasoning.title;
+  els.tutorialAttackFeedback.textContent = reasoning.text;
+}
+
+function setTutorialMode(mode) {
+  tutorialState.mode = mode;
+  document.querySelectorAll("[data-tutorial-mode]").forEach(button => {
+    const active = button.dataset.tutorialMode === mode;
+    button.classList.toggle("is-active", active);
+    button.setAttribute("aria-checked", String(active));
+  });
+  const messages = {
+    easy: "简单：9×9 空域，2 架入门型飞机，系统自动安排朝向。",
+    normal: "一般：12×12 空域，4 架飞机。机身可以重叠，机头不能重叠。",
+    hard: "困难：15×15 空域，5 架飞机。机头和机身都可以重叠。"
+  };
+  els.tutorialModeFeedback.textContent = messages[mode];
+}
+
 function updateTutorialUI() {
   const hints = [
-    "认识机头、机身与战果标记",
-    "选择朝向并完成一次部署",
-    "依次体验击空、机身与机头",
-    "了解三种难度的重叠规则"
+    "目标：击中全部敌方机头",
+    "选择游戏难度",
+    "点击格子确定机头位置",
+    "设置机头朝向",
+    "根据回报推导机头",
+    "按回合侦查敌方空域",
+    "击中全部机头即可获胜"
   ];
+  const tutorialStepTotal = document.querySelectorAll("[data-tutorial-step]").length;
   document.querySelectorAll("[data-tutorial-step]").forEach((step, index) => { step.hidden = index !== tutorialState.step; });
   document.querySelectorAll("[data-tutorial-progress]").forEach((item, index) => {
     item.classList.toggle("is-active", index === tutorialState.step);
     item.classList.toggle("is-complete", index < tutorialState.step);
   });
-  els.tutorialStepCount.textContent = `第 ${tutorialState.step + 1} 步 / 共 4 步`;
+  const activeProgress = document.querySelector(`[data-tutorial-progress="${tutorialState.step}"]`);
+  const progressTrack = activeProgress?.parentElement;
+  if (activeProgress && progressTrack) {
+    progressTrack.scrollLeft = activeProgress.offsetLeft - (progressTrack.clientWidth - activeProgress.clientWidth) / 2;
+  }
+  els.tutorialStepCount.textContent = `第 ${tutorialState.step + 1} 步 / 共 ${tutorialStepTotal} 步`;
+  if (tutorialState.step !== 5) closeTutorialToolbarPopovers();
   els.tutorialNavHint.textContent = hints[tutorialState.step];
   els.tutorialBackButton.disabled = tutorialState.step === 0;
-  els.tutorialNextButton.disabled = (tutorialState.step === 1 && !tutorialState.deployed)
-    || (tutorialState.step === 2 && tutorialState.shotIndex < TUTORIAL_SHOTS.length);
-  els.tutorialNextButton.textContent = ["开始学习 →", "下一步 →", "下一步 →", "进入游戏 →"][tutorialState.step];
+  els.tutorialNextButton.disabled = (tutorialState.step === 2 && !tutorialState.searchStarted)
+    || (tutorialState.step === 4 && tutorialState.shotIndex < TUTORIAL_SHOTS.length);
+  els.tutorialNextButton.textContent = tutorialState.step === tutorialStepTotal - 1 ? "进入简单模式 →" : tutorialState.step === 0 ? "开始学习 →" : "下一步 →";
 }
 
 function renderModelPicker() {
@@ -471,6 +984,22 @@ function renderModelPreview() {
   ).join("");
 }
 
+function renderBattleModelGuide() {
+  els.battleModelsPopover.classList.toggle("is-single", config().models.length === 1);
+  els.battleModelList.innerHTML = config().models.map(modelId => {
+    const model = MODELS[modelId];
+    return `<div class="battle-model-item">
+      ${battleModelBoardMarkup(modelId)}
+      <strong>${model.name}</strong>
+    </div>`;
+  }).join("");
+}
+
+function setBattleModelsPopover(open) {
+  els.battleModelsPopover.hidden = !open;
+  els.battleModelsButton.setAttribute("aria-expanded", String(open));
+}
+
 function renderSetup() {
   resetBoardCells(els.setupBoard);
   drawPlanes(els.setupBoard, state.playerPlanes);
@@ -482,18 +1011,37 @@ function renderSetup() {
       <span>${String(index + 1).padStart(2, "0")} · ${MODELS[plane.modelId].name}</span><b>撤回 ×</b>
     </button>`;
   }).join("");
-  els.startButton.disabled = state.playerPlanes.length !== fleet;
-  els.statusText.textContent = state.playerPlanes.length === fleet
-    ? "编队部署完毕，可以开始侦察。"
-    : `选择机型与方向，再点击棋盘确定机头。还需部署 ${fleet - state.playerPlanes.length} 架。`;
+  const fleetReady = state.playerPlanes.length === fleet;
+  if (isMultiplayer()) {
+    els.startButton.firstElementChild.textContent = multiplayer.ready ? "等待对方准备" : "准备完成";
+    els.startButton.disabled = !fleetReady || !multiplayer.connected || multiplayer.ready;
+  } else {
+    els.startButton.firstElementChild.textContent = "开始侦查";
+    els.startButton.disabled = !fleetReady;
+  }
+  els.statusText.textContent = fleetReady
+    ? isMultiplayer() ? "飞机已经藏好，点击“准备完成”等待朋友。" : "飞机已经藏好，可以开始侦查。"
+    : state.mode === "easy"
+      ? `点击棋盘选择机头位置，朝向会自动安排。还需部署 ${fleet - state.playerPlanes.length} 架。`
+      : `选择机型与方向，再点击棋盘确定机头。还需部署 ${fleet - state.playerPlanes.length} 架。`;
+}
+
+function placementAt(row, col) {
+  const directions = config().autoDirection ? DIRECTIONS : [state.direction];
+  const candidates = directions.map(direction => ({
+    direction,
+    cells: planeCells(row, col, direction, state.selectedModel)
+  }));
+  return candidates.find(candidate => isValidPlane(candidate.cells, state.playerPlanes))
+    || candidates[0];
 }
 
 function previewPlane(row, col) {
   if (state.playerPlanes.length >= config().fleet) return;
   clearPreview();
-  const cells = planeCells(row, col, state.direction, state.selectedModel);
-  const valid = isValidPlane(cells, state.playerPlanes);
-  cells.forEach(cell => getCell(els.setupBoard, cell.row, cell.col)?.classList.add(valid ? "preview-valid" : "preview-invalid"));
+  const placement = placementAt(row, col);
+  const valid = isValidPlane(placement.cells, state.playerPlanes);
+  placement.cells.forEach(cell => getCell(els.setupBoard, cell.row, cell.col)?.classList.add(valid ? "preview-valid" : "preview-invalid"));
 }
 
 function clearPreview() {
@@ -505,16 +1053,17 @@ function placePlayerPlane(row, col) {
     showToast("编队已满，请从编队列表撤回战机");
     return;
   }
-  const cells = planeCells(row, col, state.direction, state.selectedModel);
-  if (!isValidPlane(cells, state.playerPlanes)) {
+  const placement = placementAt(row, col);
+  if (!isValidPlane(placement.cells, state.playerPlanes)) {
     showToast(state.mode === "normal" ? "机头不能与其他飞机重叠" : "此处空间不足或发生了重叠");
     return;
   }
+  invalidateOnlineReady();
   state.playerPlanes.push({
     head: { row, col },
-    direction: state.direction,
+    direction: placement.direction,
     modelId: state.selectedModel,
-    cells,
+    cells: placement.cells,
     sunk: false
   });
   renderSetup();
@@ -542,51 +1091,107 @@ function randomFleet() {
   return planes;
 }
 
-function setMode(mode) {
+function setMode(mode, { broadcast = true, announce = true } = {}) {
+  if (!MODES[mode]) return;
+  if (isMultiplayer() && multiplayer.role === "guest" && broadcast) {
+    showToast("联机难度由房主选择");
+    return;
+  }
   state.mode = mode;
   state.playerPlanes = [];
   state.enemyPlanes = [];
   state.playerShots.clear();
   state.enemyShots.clear();
+  state.enemyHeadsRemaining = config().fleet;
   state.selectedModel = config().models[0];
+  if (isMultiplayer()) {
+    multiplayer.ready = false;
+    multiplayer.opponentReady = false;
+    if (broadcast) sendRoomMessage({ type: "mode", mode });
+  }
   document.querySelectorAll(".mode-button").forEach(button => {
     const active = button.dataset.mode === mode;
     button.classList.toggle("is-active", active);
     button.setAttribute("aria-checked", String(active));
   });
-  const { size, summary, rule } = config();
-  els.modeSummary.textContent = summary;
+  const { size, summary, tips, rule } = config();
+  els.modeSummary.classList.toggle("is-tip-list", Boolean(tips));
+  els.modeSummary.innerHTML = tips
+    ? tips.map((tip, index) => `<span><b>Tip ${index + 1}</b>${tip}</span>`).join("")
+    : summary;
   els.placementRule.textContent = rule;
+  els.directionSection.hidden = Boolean(config().autoDirection);
   els.airspaceLabel.textContent = `${size} × ${size} 空域`;
-  els.coordinatesNote.textContent = `横 A–${COLUMNS[size - 1]} · 纵 1–${size}`;
+  els.coordinatesNote.textContent = `横 A-${COLUMNS[size - 1]} · 纵 1-${size}`;
   renderModelPicker();
+  renderBattleModelGuide();
   buildBoards();
   renderSetup();
-  showToast(`已切换为${config().name}模式`);
+  updateOnlineControls();
+  updateRoomStrip();
+  if (announce) showToast(`已切换为${config().name}模式`);
 }
 
 function startBattle() {
   if (state.playerPlanes.length !== config().fleet) return;
+  if (isMultiplayer()) {
+    if (!multiplayer.connected) {
+      showToast("朋友加入后才能准备");
+      return;
+    }
+    multiplayer.ready = true;
+    sendRoomMessage({ type: "ready", ready: true });
+    renderSetup();
+    updateRoomStrip();
+    showToast("已准备，等待朋友完成布阵");
+    maybeStartOnlineBattle();
+    return;
+  }
   state.enemyPlanes = randomFleet();
   if (state.enemyPlanes.length !== config().fleet) {
     showToast("布阵生成失败，请重试");
     return;
   }
   state.phase = "battle";
+  document.body.classList.add("battle-active");
   state.turn = "player";
   state.gameOver = false;
+  showBattleView();
+}
+
+function showBattleView() {
   window.clearTimeout(enemyFireTimer);
   enemyFireTimer = null;
   els.setupView.hidden = true;
   els.battleView.hidden = false;
-  els.missionLabel.textContent = `${config().name} · 交战阶段`;
-  els.statusTitle.textContent = "搜索敌方机头";
-  els.statusText.textContent = "点击敌方棋盘中的未知坐标发动攻击。";
+  els.missionLabel.textContent = `${config().name} · 侦查阶段`;
+  els.statusTitle.textContent = "侦查敌方空域";
+  els.statusText.textContent = "点击敌方空域中的未知坐标。";
   els.combatMark.hidden = true;
   els.combatMark.textContent = "";
-  els.combatMessage.textContent = "无线电静默。选择敌方空域中的一个坐标。";
+  els.combatMessage.textContent = "请选择敌方空域中的一个未知坐标。";
+  renderBattleModelGuide();
   renderBattle();
   playTone(300, 0.08);
+}
+
+function beginOnlineBattle(firstRole = "host") {
+  if (!isMultiplayer() || state.phase === "battle") return;
+  state.enemyPlanes = [];
+  state.enemyHeadsRemaining = config().fleet;
+  state.playerShots.clear();
+  state.enemyShots.clear();
+  state.playerPlanes.forEach(plane => { plane.sunk = false; });
+  multiplayer.pendingShot = null;
+  state.phase = "battle";
+  document.body.classList.add("battle-active");
+  state.turn = multiplayer.role === firstRole ? "player" : "enemy";
+  state.round = 1;
+  state.gameOver = false;
+  showBattleView();
+  if (state.turn !== "player") els.combatMessage.textContent = "等待朋友选择侦查坐标。";
+  updateRoomStrip();
+  showToast(state.turn === "player" ? "你先行动" : "房主先行动");
 }
 
 function resolveShot(planes, row, col) {
@@ -603,7 +1208,22 @@ function playerFire(row, col) {
   if (state.phase !== "battle" || state.turn !== "player" || state.gameOver) return;
   const shotKey = key(row, col);
   if (state.playerShots.has(shotKey)) {
-    showToast("这个坐标已经侦察过了");
+    showToast("这个坐标已经侦查过了");
+    return;
+  }
+  if (isMultiplayer()) {
+    if (!multiplayer.connected || multiplayer.pendingShot) return;
+    multiplayer.pendingShot = { row, col };
+    state.turn = "enemy";
+    els.combatMark.hidden = true;
+    els.combatMessage.textContent = `${label(row, col)}：等待朋友回报…`;
+    if (!sendRoomMessage({ type: "shot", row, col })) {
+      multiplayer.pendingShot = null;
+      state.turn = "player";
+      showToast("坐标发送失败，请检查连接");
+    }
+    renderBattle();
+    updateRoomStrip();
     return;
   }
   const shot = resolveShot(state.enemyPlanes, row, col);
@@ -617,6 +1237,61 @@ function playerFire(row, col) {
   renderBattle();
   if (checkWinner()) return;
   scheduleEnemyFire();
+}
+
+function receiveOnlineShot({ row, col }) {
+  if (!isMultiplayer() || state.phase !== "battle" || state.gameOver || state.turn !== "enemy") return;
+  if (!Number.isInteger(row) || !Number.isInteger(col) || row < 0 || col < 0 || row >= config().size || col >= config().size) return;
+  const shotKey = key(row, col);
+  if (state.enemyShots.has(shotKey)) return;
+  const shot = resolveShot(state.playerPlanes, row, col);
+  state.enemyShots.set(shotKey, shot);
+  const remaining = state.playerPlanes.filter(plane => !plane.sunk).length;
+  sendRoomMessage({ type: "shot-result", row, col, result: shot.result, headCount: shot.headCount, remaining });
+  const resultText = shot.result === "miss" ? "击空" : shot.result === "hit" ? "命中我方机身" : `锁定我方 ${shot.headCount} 个机头`;
+  showCombatMark(shot.result);
+  els.combatMessage.textContent = `朋友攻击 ${label(row, col)}：${resultText}。`;
+  playShotSound(shot.result);
+  state.round = Math.floor((state.playerShots.size + state.enemyShots.size) / 2) + 1;
+  if (remaining === 0) {
+    finishOnlineGame(false);
+    return;
+  }
+  state.turn = "player";
+  renderBattle();
+  updateRoomStrip();
+}
+
+function receiveOnlineShotResult({ row, col, result, headCount, remaining }) {
+  const pending = multiplayer.pendingShot;
+  if (!isMultiplayer() || !pending || pending.row !== row || pending.col !== col) return;
+  if (!["miss", "hit", "head"].includes(result)) return;
+  const shot = { result, headCount: Math.max(0, Number(headCount) || 0) };
+  state.playerShots.set(key(row, col), shot);
+  state.enemyHeadsRemaining = Math.max(0, Number(remaining) || 0);
+  multiplayer.pendingShot = null;
+  const resultText = result === "miss" ? "击空" : result === "hit" ? "击中机身" : `锁定 ${shot.headCount} 个机头`;
+  const destroyed = result === "head" ? `，击落敌机 ${shot.headCount} 架。` : "。";
+  showCombatMark(result);
+  els.combatMessage.textContent = `${label(row, col)}：${resultText}${destroyed}`;
+  playShotSound(result);
+  state.round = Math.floor((state.playerShots.size + state.enemyShots.size) / 2) + 1;
+  if (state.enemyHeadsRemaining === 0) {
+    finishOnlineGame(true);
+    return;
+  }
+  state.turn = "enemy";
+  renderBattle();
+  updateRoomStrip();
+}
+
+function finishOnlineGame(won) {
+  state.gameOver = true;
+  state.turn = "none";
+  multiplayer.pendingShot = null;
+  renderBattle();
+  showGameResult(won);
+  updateRoomStrip();
 }
 
 function neighbors(row, col) {
@@ -650,7 +1325,7 @@ function enemyFire() {
   const [row, col] = chooseEnemyTarget();
   const shot = resolveShot(state.playerPlanes, row, col);
   state.enemyShots.set(key(row, col), shot);
-  if (shot.result === "hit") state.aiQueue.push(...neighbors(row, col));
+  if (shot.result === "hit" && state.mode !== "easy") state.aiQueue.push(...neighbors(row, col));
   if (shot.result === "head") state.aiQueue = [];
   const resultText = shot.result === "miss" ? "击空" : shot.result === "hit" ? "命中我方机身" : `锁定我方 ${shot.headCount} 个机头`;
   showCombatMark(shot.result);
@@ -666,9 +1341,12 @@ function applyShots(board, shots) {
   shots.forEach((shot, shotKey) => {
     const [row, col] = shotKey.split(",").map(Number);
     const cell = getCell(board, row, col);
-    const symbols = { miss: "·", hit: "·", head: "✹" };
+    const marker = cell.querySelector("span");
     cell.classList.add("shot", `shot-${shot.result}`);
-    cell.querySelector("span").textContent = symbols[shot.result];
+    marker.className = "shot-marker";
+    marker.innerHTML = shot.result === "head"
+      ? '<i class="shot-burst" aria-hidden="true">✹</i>'
+      : `<i class="shot-dot" aria-hidden="true"></i>`;
     if (shot.headCount > 1) cell.insertAdjacentHTML("beforeend", `<b class="destroyed-count">×${shot.headCount}</b>`);
     cell.disabled = true;
     cell.setAttribute("aria-label", `${label(row, col)} ${shot.result === "miss" ? "击空" : shot.result === "hit" ? "击中机身" : `击落 ${shot.headCount} 架飞机`}`);
@@ -694,7 +1372,7 @@ function renderBattle() {
   const hits = [...state.playerShots.values()].filter(shot => shot.result !== "miss").length;
   els.accuracy.textContent = state.playerShots.size ? `${Math.round(hits / state.playerShots.size * 100)}%` : "0%";
   els.roundCount.textContent = String(state.round).padStart(2, "0");
-  const enemyHeads = state.enemyPlanes.filter(plane => !plane.sunk).length;
+  const enemyHeads = isMultiplayer() ? state.enemyHeadsRemaining : state.enemyPlanes.filter(plane => !plane.sunk).length;
   const playerHeads = state.playerPlanes.filter(plane => !plane.sunk).length;
   els.enemyRemaining.textContent = `机头 ${enemyHeads} / ${config().fleet}`;
   els.playerRemaining.textContent = `机头 ${playerHeads} / ${config().fleet}`;
@@ -703,8 +1381,14 @@ function renderBattle() {
 
 function updateTurnUI() {
   const playerTurn = state.turn === "player";
-  els.turnText.textContent = playerTurn ? "轮到你行动" : state.gameOver ? "任务结束" : "敌方正在定位…";
-  els.turnLamp.style.background = playerTurn ? "#f0c95f" : "#d05247";
+  els.turnText.textContent = playerTurn
+    ? "轮到你行动"
+    : state.gameOver
+      ? "任务结束"
+      : isMultiplayer()
+        ? multiplayer.connected ? "等待朋友行动…" : "连接已断开"
+        : "敌方正在定位…";
+  els.turnLamp.style.background = playerTurn ? "var(--gold)" : "var(--red)";
 }
 
 function checkWinner() {
@@ -715,10 +1399,15 @@ function checkWinner() {
   state.turn = "none";
   renderBattle();
   const won = enemyLost;
+  showGameResult(won);
+  return true;
+}
+
+function showGameResult(won) {
   const hits = [...state.playerShots.values()].filter(shot => shot.result !== "miss").length;
   const accuracy = state.playerShots.size ? Math.round(hits / state.playerShots.size * 100) : 0;
   els.resultSeal.textContent = won ? "胜" : "败";
-  els.resultTitle.textContent = won ? "空域已肃清" : "编队失去联络";
+  els.resultTitle.textContent = won ? "找到所有机头" : "对手先找到了机头";
   els.resultText.textContent = won ? "你率先锁定了全部敌方机头。" : "敌方先一步锁定了我方全部机头。";
   els.resultStats.innerHTML = `
     <span><strong>${state.round}</strong>回合</span>
@@ -728,10 +1417,15 @@ function checkWinner() {
   renderNextModeActions();
   els.resultOverlay.hidden = false;
   els.restartButton.focus();
-  return true;
 }
 
 function renderNextModeActions() {
+  if (isMultiplayer() && multiplayer.role === "guest") {
+    els.nextMissionLabel.textContent = "下一局由房主选择难度";
+    els.nextModeActions.innerHTML = "";
+    return;
+  }
+  els.nextMissionLabel.textContent = "接下来想玩哪一关";
   const modeOrder = ["easy", "normal", "hard"];
   const currentIndex = modeOrder.indexOf(state.mode);
   els.nextModeActions.innerHTML = modeOrder
@@ -751,10 +1445,22 @@ function restart(nextMode = state.mode) {
   returnToSetup(false, nextMode);
 }
 
-function returnToSetup(preserveFleet, nextMode = state.mode) {
+function returnToSetup(preserveFleet, nextMode = state.mode, { broadcast = true } = {}) {
+  if (isMultiplayer() && multiplayer.role === "guest" && broadcast && nextMode !== state.mode) {
+    showToast("联机难度由房主选择");
+    return;
+  }
+  if (isMultiplayer()) {
+    multiplayer.ready = false;
+    multiplayer.opponentReady = false;
+    multiplayer.pendingShot = null;
+    state.enemyHeadsRemaining = MODES[nextMode]?.fleet ?? config().fleet;
+    if (broadcast) sendRoomMessage({ type: "reset", preserveFleet, mode: nextMode });
+  }
   window.clearTimeout(enemyFireTimer);
   enemyFireTimer = null;
   state.phase = "setup";
+  document.body.classList.remove("battle-active");
   state.playerPlanes = preserveFleet
     ? state.playerPlanes.map(plane => ({ ...plane, sunk: false }))
     : [];
@@ -770,12 +1476,13 @@ function returnToSetup(preserveFleet, nextMode = state.mode) {
   els.setupView.hidden = false;
   els.battleView.hidden = true;
   els.missionLabel.textContent = "布阵阶段";
-  els.statusTitle.textContent = "部署你的飞行编队";
+  els.statusTitle.textContent = "布置你的飞机";
   if (nextMode !== state.mode) {
-    setMode(nextMode);
+    setMode(nextMode, { broadcast: false });
   } else {
     renderSetup();
   }
+  updateRoomStrip();
 }
 
 function setDirection(direction) {
@@ -830,7 +1537,7 @@ document.addEventListener("keydown", event => {
   const direction = directionByKey[event.key];
   if (!els.tutorialView.hidden) {
     if (event.key === "Escape") exitTutorial();
-    if (direction && tutorialState.step === 1) {
+    if (direction && tutorialState.step === 3) {
       event.preventDefault();
       setTutorialDirection(direction);
     }
@@ -842,14 +1549,48 @@ document.addEventListener("keydown", event => {
   event.preventDefault();
   setDirection(direction);
 });
-els.welcomeStartButton.addEventListener("click", enterGame);
+els.welcomeStartButton.addEventListener("click", () => els.playModeDialog.showModal());
 els.welcomeTutorialButton.addEventListener("click", openTutorial);
+els.soloModeButton.addEventListener("click", () => {
+  state.playMode = "solo";
+  state.enemyHeadsRemaining = null;
+  els.playModeDialog.close();
+  updateOnlineControls();
+  enterGame();
+});
+els.onlineModeButton.addEventListener("click", createMultiplayerRoom);
+els.roomCopyButton.addEventListener("click", copyRoomLink);
+els.copyRoomLinkButton.addEventListener("click", copyRoomLink);
+els.roomEnterButton.addEventListener("click", () => {
+  closeRoomDialog();
+  enterGame();
+});
+els.closeRoomDialogButton.addEventListener("click", closeRoomDialog);
+els.roomCancelButton.addEventListener("click", () => disconnectMultiplayer());
+els.leaveRoomButton.addEventListener("click", () => disconnectMultiplayer());
 els.gameHomeLink.addEventListener("click", event => {
   event.preventDefault();
-  showWelcome();
+  if (isMultiplayer()) disconnectMultiplayer();
+  else showWelcome();
 });
 els.tutorialSkipButton.addEventListener("click", enterGame);
 els.tutorialExitButton.addEventListener("click", exitTutorial);
+els.tutorialRandomDeployButton.addEventListener("click", () => {
+  tutorialState.deployedCount = TUTORIAL_DEPLOYMENTS.length;
+  tutorialState.searchStarted = false;
+  els.tutorialDeployFeedback.textContent = "已自动部署两架飞机。点击“开始侦查”完成这一步。";
+  renderTutorialDeployBoard();
+  updateTutorialUI();
+  playTone(420, 0.06);
+});
+els.tutorialStartSearchButton.addEventListener("click", () => {
+  if (tutorialState.deployedCount !== TUTORIAL_DEPLOYMENTS.length) return;
+  tutorialState.searchStarted = true;
+  els.tutorialDeployFeedback.textContent = "布阵完成，可以进入下一步学习侦查。";
+  renderTutorialDeployBoard();
+  updateTutorialUI();
+  playTone(520, 0.08);
+});
 els.tutorialBackButton.addEventListener("click", () => {
   if (tutorialState.step === 0) return;
   tutorialState.step -= 1;
@@ -857,7 +1598,9 @@ els.tutorialBackButton.addEventListener("click", () => {
   els.tutorialView.scrollTop = 0;
 });
 els.tutorialNextButton.addEventListener("click", () => {
-  if (tutorialState.step === 3) {
+  const tutorialStepTotal = document.querySelectorAll("[data-tutorial-step]").length;
+  if (tutorialState.step === tutorialStepTotal - 1) {
+    setMode("easy");
     enterGame();
     return;
   }
@@ -868,6 +1611,14 @@ els.tutorialNextButton.addEventListener("click", () => {
 document.querySelectorAll("[data-tutorial-direction]").forEach(button => {
   button.addEventListener("click", () => setTutorialDirection(button.dataset.tutorialDirection));
 });
+document.querySelectorAll("[data-tutorial-mode]").forEach(button => {
+  button.addEventListener("click", () => setTutorialMode(button.dataset.tutorialMode));
+});
+els.tutorialModelsButton.addEventListener("click", () => toggleTutorialToolbarPopover(els.tutorialModelsPopover, els.tutorialModelsButton));
+els.tutorialSettingsButton.addEventListener("click", () => toggleTutorialToolbarPopover(els.tutorialSettingsPopover, els.tutorialSettingsButton));
+document.querySelectorAll("[data-tutorial-menu-action]").forEach(button => {
+  button.addEventListener("click", closeTutorialToolbarPopovers);
+});
 els.modelPicker.addEventListener("click", event => {
   const button = event.target.closest("[data-model]");
   if (!button) return;
@@ -877,11 +1628,13 @@ els.modelPicker.addEventListener("click", event => {
 els.fleetSlots.addEventListener("click", event => {
   const button = event.target.closest("[data-remove-plane]");
   if (!button) return;
+  invalidateOnlineReady();
   state.playerPlanes.splice(Number(button.dataset.removePlane), 1);
   renderSetup();
   showToast("已撤回该战机");
 });
 els.randomButton.addEventListener("click", () => {
+  invalidateOnlineReady();
   state.playerPlanes = randomFleet();
   renderSetup();
   showToast("已生成随机编队");
@@ -893,6 +1646,19 @@ els.nextModeActions.addEventListener("click", event => {
   if (button) restart(button.dataset.nextMode);
 });
 els.rulesButton.addEventListener("click", () => els.rulesDialog.showModal());
+els.battleModelsButton.addEventListener("click", event => {
+  event.stopPropagation();
+  const supportsHover = window.matchMedia("(hover: hover) and (pointer: fine) and (min-width: 581px)").matches;
+  setBattleModelsPopover(supportsHover ? true : els.battleModelsPopover.hidden);
+});
+els.battleModelsControl.addEventListener("mouseenter", () => {
+  if (window.matchMedia("(hover: hover) and (pointer: fine) and (min-width: 581px)").matches) setBattleModelsPopover(true);
+});
+els.battleModelsControl.addEventListener("mouseleave", () => {
+  if (window.matchMedia("(hover: hover) and (pointer: fine) and (min-width: 581px)").matches) setBattleModelsPopover(false);
+});
+els.battleModelsPopover.addEventListener("click", event => event.stopPropagation());
+document.addEventListener("click", () => setBattleModelsPopover(false));
 els.battleMenuButton.addEventListener("click", () => {
   window.clearTimeout(enemyFireTimer);
   enemyFireTimer = null;
@@ -908,7 +1674,7 @@ els.restartBattleButton.addEventListener("click", () => {
   showToast("已清空编队，请重新布阵");
 });
 els.battleMenuDialog.addEventListener("close", () => {
-  if (state.phase === "battle" && state.turn === "enemy" && !state.gameOver && !enemyFireTimer) scheduleEnemyFire(300);
+  if (!isMultiplayer() && state.phase === "battle" && state.turn === "enemy" && !state.gameOver && !enemyFireTimer) scheduleEnemyFire(300);
 });
 els.soundButton.addEventListener("click", () => {
   state.sound = !state.sound;
@@ -924,8 +1690,22 @@ document.querySelectorAll(".mobile-tab").forEach(button => {
   });
 });
 
+window.addEventListener("pagehide", () => {
+  if (isMultiplayer() && multiplayer.connection?.open) multiplayer.connection.send({ type: "leave" });
+});
+
 renderIntroVisuals();
 renderModelPicker();
+renderBattleModelGuide();
 buildBoards();
 renderSetup();
+els.directionSection.hidden = Boolean(config().autoDirection);
 setDirection(state.direction);
+
+const requestedRoomCode = new URL(window.location.href).searchParams.get("room")?.toLowerCase() || "";
+if (/^[a-z0-9]{6,12}$/.test(requestedRoomCode)) {
+  window.setTimeout(() => joinMultiplayerRoom(requestedRoomCode), 0);
+} else if (requestedRoomCode) {
+  setRoomUrl();
+  showToast("邀请链接中的房间码无效");
+}
