@@ -747,6 +747,12 @@ function exitTutorial() {
   els.welcomeView.scrollTop = 0;
 }
 
+function finishTutorial() {
+  setMode("easy", { announce: false });
+  exitTutorial();
+  if (!els.playModeDialog.open) els.playModeDialog.showModal();
+}
+
 function openTutorial() {
   tutorialState.step = 0;
   tutorialState.mode = "easy";
@@ -949,7 +955,7 @@ function updateTutorialUI() {
   els.tutorialBackButton.disabled = tutorialState.step === 0;
   els.tutorialNextButton.disabled = (tutorialState.step === 2 && !tutorialState.searchStarted)
     || (tutorialState.step === 4 && tutorialState.shotIndex < TUTORIAL_SHOTS.length);
-  els.tutorialNextButton.textContent = tutorialState.step === tutorialStepTotal - 1 ? "进入简单模式 →" : tutorialState.step === 0 ? "开始学习 →" : "下一步 →";
+  els.tutorialNextButton.textContent = tutorialState.step === tutorialStepTotal - 1 ? "选择游戏方式 →" : tutorialState.step === 0 ? "开始学习 →" : "下一步 →";
 }
 
 function renderModelPicker() {
@@ -1573,7 +1579,7 @@ els.gameHomeLink.addEventListener("click", event => {
   if (isMultiplayer()) disconnectMultiplayer();
   else showWelcome();
 });
-els.tutorialSkipButton.addEventListener("click", enterGame);
+els.tutorialSkipButton.addEventListener("click", finishTutorial);
 els.tutorialExitButton.addEventListener("click", exitTutorial);
 els.tutorialRandomDeployButton.addEventListener("click", () => {
   tutorialState.deployedCount = TUTORIAL_DEPLOYMENTS.length;
@@ -1600,8 +1606,7 @@ els.tutorialBackButton.addEventListener("click", () => {
 els.tutorialNextButton.addEventListener("click", () => {
   const tutorialStepTotal = document.querySelectorAll("[data-tutorial-step]").length;
   if (tutorialState.step === tutorialStepTotal - 1) {
-    setMode("easy");
-    enterGame();
+    finishTutorial();
     return;
   }
   tutorialState.step += 1;
