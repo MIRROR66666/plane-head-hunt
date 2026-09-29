@@ -8,7 +8,7 @@
     <meta http-equiv="Pragma" content="no-cache" />
     <meta http-equiv="Expires" content="0" />
     <title>寻机头</title>
-    <link rel="stylesheet" href="styles.css?v=20260924-2" />
+    <link rel="stylesheet" href="styles.css?v=20260929-7" />
   </head>
   <body class="intro-active">
     <section id="welcomeView" class="welcome-view" aria-labelledby="welcomeTitle">
@@ -49,6 +49,13 @@
             <strong>新手教程</strong><b aria-hidden="true">?</b>
           </button>
         </div>
+        <footer class="player-feedback welcome-feedback" aria-label="玩家反馈联系方式">
+          <p><span>游戏新手努力闯关中💪，如果有任何的想法欢迎随时联系我～期待带来更加美好的游戏体验</span></p>
+          <div class="feedback-contact">
+            <a href="mailto:565516020@qq.com?subject=%E3%80%8A%E5%AF%BB%E6%9C%BA%E5%A4%B4%E3%80%8B%E6%B8%B8%E7%8E%A9%E5%8F%8D%E9%A6%88">565516020@qq.com</a>
+            <button type="button" data-copy-feedback-email>复制邮箱</button>
+          </div>
+        </footer>
       </main>
     </section>
 
@@ -94,16 +101,16 @@
             <div class="tutorial-copy">
               <p class="tutorial-step-label">2️⃣ 选择难度</p>
               <h2>新手先选简单模式</h2>
-              <p>简单模式是 9×9 空域，共 2 架入门型飞机。你只需要点击机头位置，系统会自动安排朝向。</p>
-              <div class="tutorial-callout"><strong>进阶模式</strong><span>一般和困难模式还需要选择机型和机头朝向。</span></div>
+              <p>简单模式是 9×9 空域，共 2 架入门型飞机。先选择机头朝向，再点击棋盘放置飞机。</p>
+              <div class="tutorial-callout"><strong>进阶模式</strong><span>一般和困难模式还可以选择不同机型。</span></div>
             </div>
             <div class="tutorial-demo tutorial-mode-picker-demo">
               <div class="mode-switch tutorial-mode-switch" role="radiogroup" aria-label="教程难度选择">
                 <button class="mode-button is-active" data-tutorial-mode="easy" type="button" role="radio" aria-checked="true"><span>简单</span><small>9×9 · 2 架</small></button>
                 <button class="mode-button" data-tutorial-mode="normal" type="button" role="radio" aria-checked="false"><span>一般</span><small>12×12 · 4 架</small></button>
-                <button class="mode-button" data-tutorial-mode="hard" type="button" role="radio" aria-checked="false"><span>困难</span><small>15×15 · 5 架</small></button>
+                <button class="mode-button" data-tutorial-mode="hard" type="button" role="radio" aria-checked="false"><span>困难</span><small>14×14 · 5 架</small></button>
               </div>
-              <p id="tutorialModeFeedback" class="tutorial-mode-feedback">简单模式：小飞机、自动朝向、任何部位不能重叠。</p>
+              <p id="tutorialModeFeedback" class="tutorial-mode-feedback">简单模式：2 架入门型飞机，可以调整方向，任何部位不能重叠。</p>
             </div>
           </section>
 
@@ -111,7 +118,7 @@
             <div class="tutorial-copy">
               <p class="tutorial-step-label">3️⃣ 布置飞机</p>
               <h2>按顺序部署两架飞机</h2>
-              <p>简单模式的飞机方向由系统安排，两架飞机不能重叠。</p>
+              <p>选择方向并点击机头位置。简单模式的两架飞机不能重叠。</p>
               <ol class="tutorial-action-list tutorial-deploy-tasks">
                 <li data-deploy-task="0"><span>1</span><p><strong>点击 C3</strong><small>部署第一架飞机</small></p></li>
                 <li data-deploy-task="1"><span>2</span><p><strong>点击 E2</strong><small>部署第二架飞机</small></p></li>
@@ -138,7 +145,7 @@
           <section class="tutorial-step" data-tutorial-step="3" hidden>
             <div class="tutorial-copy">
               <p class="tutorial-step-label">4️⃣ 调整朝向</p>
-              <h2>进阶模式需要选择机头朝向</h2>
+              <h2>用方向键调整机头朝向</h2>
               <div class="tutorial-direction-row" role="group" aria-label="教程飞机朝向">
                 <button class="is-active" data-tutorial-direction="N" type="button" aria-label="机头向北">↑</button>
                 <button data-tutorial-direction="E" type="button" aria-label="机头向东">→</button>
@@ -158,16 +165,15 @@
             <div class="tutorial-copy">
               <p class="tutorial-step-label">5️⃣ 开始侦查</p>
               <h2>根据回报推导机头</h2>
-              <p>每回合点击一个坐标。灰点用于排除，绿点表示机身；对照机型和朝向，找到机头。</p>
+              <p>先跟着示范排除第一架飞机，再独立找到第二架飞机。</p>
               <div class="tutorial-shot-order">
-                <span data-shot-order="0"><b>B2</b>击空</span>
-                <span data-shot-order="1"><b>C3</b>机身</span>
-                <span data-shot-order="2"><b>D4</b>机头</span>
+                <span><b>第一架</b></span>
+                <span><b>第二架</b></span>
               </div>
               <div id="tutorialReasoning" class="tutorial-reasoning" data-reasoning-stage="0" aria-live="polite">
                 <span>推演提示</span>
-                <strong id="tutorialReasoningTitle">第一步：先验证一个坐标</strong>
-                <p id="tutorialAttackFeedback">点击 B2，看看这个坐标是否有飞机。</p>
+                <strong id="tutorialReasoningTitle">先验证 B2</strong>
+                <p id="tutorialAttackFeedback">点击 B2。击空可以排除所有经过 B2 的摆法。</p>
               </div>
             </div>
             <div class="tutorial-demo tutorial-board-demo">
@@ -177,7 +183,7 @@
                   <span>本关机型</span>
                   <div id="tutorialAttackModel" class="tutorial-attack-model" aria-hidden="true"></div>
                   <strong>入门型 · 6 格</strong>
-                  <small>红色是机头，绿色是机身。旋转机型，再与命中位置比对。</small>
+                  <small>命中越多，候选机头越少。问号会标出当前候选位置。</small>
                 </aside>
               </div>
             </div>
@@ -295,7 +301,65 @@
         </div>
       </section>
 
-      <section id="setupView" class="game-layout setup-layout">
+      <section id="difficultyView" class="difficulty-view" aria-labelledby="difficultyTitle" hidden>
+        <div class="difficulty-heading">
+          <span class="panel-index">任务准备</span>
+          <h2 id="difficultyTitle">选择本局难度</h2>
+          <p>先确定空域和规则，再进入对应的布阵页面。</p>
+        </div>
+        <div class="difficulty-options" role="radiogroup" aria-label="选择游戏难度">
+          <button class="difficulty-option is-active" data-mode="easy" type="button" role="radio" aria-checked="true">
+            <span class="difficulty-card-heading">
+              <span class="difficulty-name"><strong>简单</strong><small>轻松入门</small></span>
+              <span class="difficulty-select-state" aria-hidden="true"><i></i><b>当前选择</b></span>
+            </span>
+            <span class="difficulty-stats" aria-label="9乘9空域，2架飞机">
+              <span><small>空域尺寸</small><strong>9×9</strong></span>
+              <span><small>飞机数量</small><strong>2 <em>架</em></strong></span>
+            </span>
+            <span class="difficulty-rules">
+              <span><small>机型</small><strong>一种入门机型</strong></span>
+              <span><small>朝向</small><strong>可以自由调整</strong></span>
+              <span class="is-key-rule"><small>重叠</small><strong>飞机之间不能重叠</strong></span>
+            </span>
+          </button>
+          <button class="difficulty-option" data-mode="normal" type="button" role="radio" aria-checked="false">
+            <span class="difficulty-card-heading">
+              <span class="difficulty-name"><strong>一般</strong><small>进阶推理</small></span>
+              <span class="difficulty-select-state" aria-hidden="true"><i></i><b>选择此难度</b></span>
+            </span>
+            <span class="difficulty-stats" aria-label="12乘12空域，4架飞机">
+              <span><small>空域尺寸</small><strong>12×12</strong></span>
+              <span><small>飞机数量</small><strong>4 <em>架</em></strong></span>
+            </span>
+            <span class="difficulty-rules">
+              <span><small>机型</small><strong>四种机型随机排列</strong></span>
+              <span class="is-key-rule"><small>机身</small><strong>机身之间可以重叠</strong></span>
+              <span class="is-key-rule"><small>机头</small><strong>不能与任何部位重叠</strong></span>
+            </span>
+          </button>
+          <button class="difficulty-option" data-mode="hard" type="button" role="radio" aria-checked="false">
+            <span class="difficulty-card-heading">
+              <span class="difficulty-name"><strong>困难</strong><small>深度挑战</small></span>
+              <span class="difficulty-select-state" aria-hidden="true"><i></i><b>选择此难度</b></span>
+            </span>
+            <span class="difficulty-stats" aria-label="14乘14空域，5架飞机">
+              <span><small>空域尺寸</small><strong>14×14</strong></span>
+              <span><small>飞机数量</small><strong>5 <em>架</em></strong></span>
+            </span>
+            <span class="difficulty-rules">
+              <span><small>机型</small><strong>六种机型随机排列</strong></span>
+              <span class="is-key-rule"><small>机身</small><strong>机身之间可以重叠</strong></span>
+              <span class="is-key-rule"><small>机头</small><strong>最多一组双机头重叠</strong></span>
+            </span>
+          </button>
+        </div>
+        <button id="difficultyContinueButton" class="primary-button difficulty-continue" type="button">
+          <span id="difficultyContinueLabel">进入简单布阵</span><span aria-hidden="true">→</span>
+        </button>
+      </section>
+
+      <section id="setupView" class="game-layout setup-layout" hidden>
         <div class="board-panel">
           <div class="panel-heading">
             <div>
@@ -310,20 +374,9 @@
         </div>
 
         <aside class="control-panel">
-          <div class="control-section mode-section">
-            <span class="section-label">任务难度</span>
-            <div class="mode-switch" role="radiogroup" aria-label="选择游戏难度">
-              <button class="mode-button is-active" data-mode="easy" type="button" role="radio" aria-checked="true">
-                <span>简单</span><small>9×9 · 2 架</small>
-              </button>
-              <button class="mode-button" data-mode="normal" type="button" role="radio" aria-checked="false">
-                <span>一般</span><small>12×12 · 4 架</small>
-              </button>
-              <button class="mode-button" data-mode="hard" type="button" role="radio" aria-checked="false">
-                <span>困难</span><small>15×15 · 5 架</small>
-              </button>
-            </div>
-            <p id="modeSummary" class="mode-summary">2 架 6 格入门小飞机，点击机头位置后自动安排朝向。</p>
+          <div class="setup-mode-banner">
+            <span><small>当前难度</small><strong id="setupModeName">简单 · 9×9</strong></span>
+            <button id="backToDifficultyButton" type="button">返回选择难度</button>
           </div>
 
           <div id="modelSection" class="control-section model-section">
@@ -372,18 +425,20 @@
 
       <section id="battleView" class="battle-view" hidden>
         <div class="battle-toolbar">
-          <div class="turn-indicator">
-            <span id="turnLamp" class="turn-lamp"></span>
-            <span id="turnText">轮到你行动</span>
-          </div>
-          <div class="battle-toolbar-actions">
+          <div class="battle-toolbar-status">
+            <div class="turn-indicator">
+              <span id="turnLamp" class="turn-lamp"></span>
+              <span id="turnText">轮到你行动</span>
+            </div>
             <div class="battle-stats">
               <span>回合 <strong id="roundCount">01</strong></span>
               <span>命中率 <strong id="accuracy">0%</strong></span>
             </div>
+          </div>
+          <div class="battle-toolbar-actions">
             <div id="battleModelsControl" class="battle-models-control">
               <button id="battleModelsButton" class="battle-menu-button battle-models-button" type="button" aria-label="查看本关机型" aria-expanded="false" title="查看机型">
-                <span aria-hidden="true">✈</span><span>机型</span>
+                <span aria-hidden="true">✈</span><span>查看机型</span>
               </button>
               <div id="battleModelsPopover" class="battle-model-popover" role="dialog" aria-label="本关机型" hidden>
                 <div id="battleModelList" class="battle-model-list"></div>
@@ -427,6 +482,11 @@
           <i id="combatMark" class="combat-mark" aria-hidden="true" hidden></i>
           <p id="combatMessage">请选择敌方空域中的一个未知坐标。</p>
         </div>
+        <div id="postGameActions" class="post-game-actions" hidden>
+          <span>本局结束，点击「本局复盘」重看每一次落点。</span>
+          <button id="openReplayButton" type="button">本局复盘</button>
+          <button id="openResultButton" type="button">查看结算</button>
+        </div>
       </section>
     </main>
 
@@ -439,6 +499,7 @@
 
     <section id="resultOverlay" class="result-overlay" aria-labelledby="resultTitle" aria-live="assertive" hidden>
       <div class="result-panel" role="dialog" aria-modal="true">
+        <button id="resultCloseButton" class="dialog-close result-close" type="button" aria-label="关闭结算，查看最终棋盘">×</button>
         <div class="result-heading">
           <span id="resultSeal" class="result-seal">胜</span>
           <div>
@@ -449,9 +510,43 @@
         </div>
         <div id="resultStats" class="result-stats"></div>
         <div class="result-actions">
+          <button id="reviewButton" class="review-button" type="button">本局复盘</button>
           <button id="restartButton" class="primary-button" type="button">再来一局 <span aria-hidden="true">↻</span></button>
           <span class="next-mission-label">接下来想玩哪一关</span>
           <div id="nextModeActions" class="next-mode-actions"></div>
+        </div>
+        <footer class="player-feedback result-feedback" aria-label="玩家反馈联系方式">
+          <p><strong>这局玩得怎么样？</strong><span>遇到问题或有任何想法，欢迎写信告诉我。</span></p>
+          <div class="feedback-contact">
+            <a href="mailto:565516020@qq.com?subject=%E3%80%8A%E5%AF%BB%E6%9C%BA%E5%A4%B4%E3%80%8B%E6%B8%B8%E7%8E%A9%E5%8F%8D%E9%A6%88">565516020@qq.com</a>
+            <button type="button" data-copy-feedback-email>复制邮箱</button>
+          </div>
+        </footer>
+      </div>
+    </section>
+
+    <section id="replayOverlay" class="replay-overlay" aria-labelledby="replayTitle" hidden>
+      <div class="replay-panel" role="dialog" aria-modal="true">
+        <header class="replay-header">
+          <div><span>对局复盘</span><h2 id="replayTitle">重新查看每一次落点</h2></div>
+          <button id="replayCloseButton" class="dialog-close" type="button" aria-label="关闭复盘">×</button>
+        </header>
+        <div class="replay-tabs" role="tablist" aria-label="选择复盘视角">
+          <button class="is-active" data-replay-view="player" type="button" role="tab" aria-selected="true">我的进攻</button>
+          <button data-replay-view="enemy" type="button" role="tab" aria-selected="false">对方进攻</button>
+        </div>
+        <div class="replay-content">
+          <div class="replay-board-wrap"><div id="replayBoard" class="board replay-board" role="grid" aria-label="复盘棋盘"></div></div>
+          <aside class="replay-sidebar">
+            <span id="replayStepCount">准备播放</span>
+            <strong id="replayMessage">从第一步开始查看本局过程。</strong>
+            <div class="replay-legend"><i class="guide-mark miss">·</i><i class="guide-mark hit">·</i><i class="guide-mark head">✹</i></div>
+            <div class="replay-controls">
+              <button id="replayPreviousButton" type="button" aria-label="上一步">←</button>
+              <button id="replayPlayButton" class="is-primary" type="button">播放</button>
+              <button id="replayNextButton" type="button" aria-label="下一步">→</button>
+            </div>
+          </aside>
         </div>
       </div>
     </section>
@@ -497,10 +592,10 @@
       <p class="eyebrow">随时可以回来查看</p>
       <h2>游戏规则</h2>
       <ol>
-        <li><strong>秘密布阵</strong><span>简单模式为两架自动朝向的小飞机；一般模式仅机身可重叠；困难模式所有部位均可重叠。</span></li>
-        <li><strong>选择机型</strong><span>简单模式由系统安排小飞机朝向；一般和困难模式可以自行选择机型、旋转并部署。</span></li>
+        <li><strong>秘密布阵</strong><span>简单模式不能重叠；一般模式仅机身可重叠；困难模式最多出现一组双机头重叠。</span></li>
+        <li><strong>选择机型</strong><span>简单模式使用入门型；所有模式都可以选择机头朝向。</span></li>
         <li><strong>轮流侦查</strong><span>点击一个未知坐标，结果分为击空、击中机身、锁定机头。</span></li>
-        <li><strong>锁定胜利</strong><span>率先命中对方全部机头，即可获胜；一个坐标可能同时击落多架困难模式战机。</span></li>
+        <li><strong>锁定胜利</strong><span>率先命中对方全部机头，即可获胜；困难模式的重合机头会同时被击落。</span></li>
       </ol>
       <button class="primary-button" data-close-dialog type="button">明白</button>
     </dialog>
@@ -526,6 +621,6 @@
     <script src="assets/vendor/three.min.js?v=20260921-2"></script>
     <script src="assets/vendor/peerjs.min.js?v=1.5.5"></script>
     <script src="airport-scene.js?v=20260924-2"></script>
-    <script src="game.js?v=20260924-2"></script>
+    <script src="game.js?v=20260929-5"></script>
   </body>
 </html>
