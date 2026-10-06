@@ -44,7 +44,7 @@
         }
       }
     </script>
-    <link rel="stylesheet" href="styles.css?v=20261006-2" />
+    <link rel="stylesheet" href="styles.css?v=20261006-3" />
   </head>
   <body class="intro-active">
     <section id="welcomeView" class="welcome-view" aria-labelledby="welcomeTitle">
@@ -89,6 +89,130 @@
             <strong>新手教程</strong><b aria-hidden="true">?</b>
           </button>
         </div>
+
+        <div class="home-content">
+          <section class="home-section home-deduction" aria-labelledby="homeDeductionTitle">
+            <div class="home-section-heading">
+              <p class="home-kicker">先读懂回报，再锁定方向</p>
+              <h2 id="homeDeductionTitle">每一次点击，都是一条线索</h2>
+              <p>击空帮你排除位置，击中机身帮你判断飞机朝向。你不需要打完所有机身，只要找到全部机头。</p>
+            </div>
+
+            <div class="home-deduction-demo">
+              <div class="home-board-shell">
+                <div class="home-board-meta"><strong>敌方空域</strong><span>侦查记录 04</span></div>
+                <div class="home-mini-board" role="img" aria-label="由击空、机身和候选机头组成的推理棋盘示例">
+                  <span class="home-board-mark is-miss" style="--col:2;--row:2"><i></i><b>B2</b></span>
+                  <span class="home-board-mark is-body" style="--col:4;--row:4"><i></i><b>D4</b></span>
+                  <span class="home-board-mark is-body" style="--col:5;--row:4"><i></i><b>E4</b></span>
+                  <span class="home-board-mark is-candidate" style="--col:4;--row:3"><i>?</i><b>D3</b></span>
+                  <span class="home-board-mark is-head" style="--col:4;--row:2"><i></i><b>D2</b></span>
+                </div>
+              </div>
+
+              <div class="home-deduction-route">
+                <div class="home-plane-reference">
+                  <span id="landingPlanePreview" aria-hidden="true"></span>
+                  <div><small>本关机型</small><strong>入门型</strong></div>
+                </div>
+                <ol>
+                  <li><b>01</b><span><strong>B2 击空</strong>排除经过这里的摆法</span></li>
+                  <li><b>02</b><span><strong>D4、E4 命中机身</strong>判断机翼横向展开</span></li>
+                  <li><b>03</b><span><strong>对照机型</strong>继续验证候选机头</span></li>
+                </ol>
+                <p class="home-result-line"><span></span>找到全部机头，立即获胜</p>
+              </div>
+            </div>
+          </section>
+
+          <section class="home-section home-difficulties" aria-labelledby="homeDifficultyTitle">
+            <div class="home-section-heading is-compact">
+              <p class="home-kicker">三片空域，三种节奏</p>
+              <h2 id="homeDifficultyTitle">从轻松上手，到深度推理</h2>
+            </div>
+            <div class="home-difficulty-grid">
+              <article class="home-difficulty is-easy">
+                <div><span>01</span><small>轻松入门</small></div>
+                <h3>简单模式</h3>
+                <strong>9 × 9</strong>
+                <p>2 架入门型飞机，可以自由调整方向，飞机之间不能重叠。</p>
+              </article>
+              <article class="home-difficulty is-normal">
+                <div><span>02</span><small>进阶推理</small></div>
+                <h3>一般模式</h3>
+                <strong>12 × 12</strong>
+                <p>4 架飞机，四种机型随机排列，<mark>仅机身可以重叠</mark>。</p>
+              </article>
+              <article class="home-difficulty is-hard">
+                <div><span>03</span><small>深度挑战</small></div>
+                <h3>困难模式</h3>
+                <strong>14 × 14</strong>
+                <p>5 架飞机，六种机型随机排列，<mark>最多一组双机头重叠</mark>。</p>
+              </article>
+            </div>
+          </section>
+
+          <section class="home-section home-play-modes" aria-labelledby="homeModesTitle">
+            <div class="home-mode-intro">
+              <p class="home-kicker">一个人练习，也可以叫上朋友</p>
+              <h2 id="homeModesTitle">同一套规则，两种对局方式</h2>
+              <p>想立刻开始，就和电脑轮流侦查；想和朋友较量，就创建房间并分享链接。</p>
+              <button type="button" data-home-start>选择对局方式 <span aria-hidden="true">→</span></button>
+            </div>
+            <div class="home-mode-runways">
+              <article>
+                <span>SOLO</span>
+                <h3>单机练习</h3>
+                <p>与电脑轮流落点，熟悉机型和推理节奏。</p>
+              </article>
+              <article>
+                <span>ROOM</span>
+                <h3>双人对战</h3>
+                <p>创建专属房间，把链接发给朋友即可加入。</p>
+              </article>
+            </div>
+          </section>
+
+          <section class="home-section home-tutorial-cta" aria-labelledby="homeTutorialTitle">
+            <div class="home-tutorial-number" aria-hidden="true">07</div>
+            <div>
+              <p class="home-kicker">第一次玩也没关系</p>
+              <h2 id="homeTutorialTitle">用一局真实推演学会寻机头</h2>
+              <p>教程会带你经历击空、命中机身、排除方向和锁定机头，最后把第二架飞机交给你独立判断。</p>
+            </div>
+            <button type="button" data-home-tutorial>进入新手教程 <span aria-hidden="true">→</span></button>
+          </section>
+
+          <section class="home-section home-faq" aria-labelledby="homeFaqTitle">
+            <div class="home-section-heading is-compact">
+              <p class="home-kicker">登机前常见问题</p>
+              <h2 id="homeFaqTitle">关于寻机头</h2>
+            </div>
+            <div class="home-faq-list">
+              <details>
+                <summary>寻机头是什么游戏？</summary>
+                <p>这是一款空域逻辑推理游戏。根据每次侦查得到的击空或机身回报，推导并找到所有敌方机头。</p>
+              </details>
+              <details>
+                <summary>不懂规则也能玩吗？</summary>
+                <p>可以。新手教程会从布阵开始，一步一步带你完成第一局推理。</p>
+              </details>
+              <details>
+                <summary>可以和朋友一起玩吗？</summary>
+                <p>可以。选择双人对战并创建房间，把邀请链接发给朋友，双方进入后即可开始。</p>
+              </details>
+              <details>
+                <summary>手机上可以玩吗？</summary>
+                <p>可以。网站支持手机、平板和电脑浏览器，不需要下载应用。</p>
+              </details>
+              <details>
+                <summary>游戏需要付费吗？</summary>
+                <p>不需要。寻机头目前可以免费游玩。</p>
+              </details>
+            </div>
+          </section>
+        </div>
+
         <footer class="player-feedback welcome-feedback" aria-label="玩家反馈联系方式">
           <p><span>游戏新手努力闯关中💪，如果有任何的想法欢迎随时联系我～期待带来更加美好的游戏体验</span></p>
           <div class="feedback-contact">
@@ -687,8 +811,8 @@
     <script src="assets/vendor/three.min.js?v=20260921-2"></script>
     <script src="assets/vendor/peerjs.min.js?v=1.5.5"></script>
     <script src="airport-scene.js?v=20260924-2"></script>
-    <script src="i18n.js?v=20261006-1"></script>
+    <script src="i18n.js?v=20261006-2"></script>
     <script src="analytics.js?v=20261006-1"></script>
-    <script src="game.js?v=20261005-2"></script>
+    <script src="game.js?v=20261006-1"></script>
   </body>
 </html>

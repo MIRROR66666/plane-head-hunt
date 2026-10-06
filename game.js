@@ -169,6 +169,7 @@ const els = {
   welcomeView: document.querySelector("#welcomeView"),
   tutorialView: document.querySelector("#tutorialView"),
   welcomePlaneLogo: document.querySelector("#welcomePlaneLogo"),
+  landingPlanePreview: document.querySelector("#landingPlanePreview"),
   tutorialBrandLogo: document.querySelector("#tutorialBrandLogo"),
   gameBrandLogo: document.querySelector("#gameBrandLogo"),
   tutorialPlaneOverview: document.querySelector("#tutorialPlaneOverview"),
@@ -830,6 +831,7 @@ function renderTutorialMiniBoard(element, variant) {
 
 function renderIntroVisuals() {
   els.welcomePlaneLogo.innerHTML = modelShapeMarkup("classic", "welcome-plane-shape");
+  els.landingPlanePreview.innerHTML = modelShapeMarkup("starter", "home-plane-shape");
   els.tutorialBrandLogo.innerHTML = modelShapeMarkup("starter", "brand-plane-shape");
   els.gameBrandLogo.innerHTML = modelShapeMarkup("starter", "brand-plane-shape");
   els.tutorialPlaneOverview.innerHTML = modelShapeMarkup("starter", "tutorial-plane-shape");
@@ -1927,6 +1929,12 @@ document.addEventListener("keydown", event => {
 });
 els.welcomeStartButton.addEventListener("click", () => els.playModeDialog.showModal());
 els.welcomeTutorialButton.addEventListener("click", openTutorial);
+document.querySelectorAll("[data-home-start]").forEach(button => {
+  button.addEventListener("click", () => els.playModeDialog.showModal());
+});
+document.querySelectorAll("[data-home-tutorial]").forEach(button => {
+  button.addEventListener("click", openTutorial);
+});
 document.querySelectorAll("[data-copy-feedback-email]").forEach(button => {
   button.addEventListener("click", () => copyFeedbackEmail(button));
 });
