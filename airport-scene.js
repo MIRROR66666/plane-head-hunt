@@ -175,7 +175,7 @@ if (canvas) {
     return cloud;
   };
 
-  const cloudA = createCloud(-5.6, 4.9, -5.8, 1.15);
+  const cloudA = createCloud(-5.6, 4.0, -5.8, 1.15);
   const cloudB = createCloud(5.1, 5.7, -6.8, 0.88);
   let cloudBAnchorX = 5.1;
   let cloudBAnchorY = 5.7;
