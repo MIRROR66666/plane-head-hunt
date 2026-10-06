@@ -382,7 +382,12 @@
     "朋友发起了新一局": "Your friend started a new match",
     "邀请链接中的房间码无效": "The room code in this invite link is invalid",
     "音效已开启": "Sound enabled",
-    "音效已关闭": "Sound muted"
+    "音效已关闭": "Sound muted",
+    "隐私设置": "Privacy Settings",
+    "分析与隐私": "Analytics & Privacy",
+    "我们使用 Google Analytics 了解游戏体验。只有在你同意后，分析脚本才会加载。": "We use Google Analytics to understand the game experience. Analytics only loads after you agree.",
+    "仅使用必要功能": "Necessary Only",
+    "允许数据分析": "Allow Analytics"
   };
 
   const MODE_NAMES = { "简单": "Easy", "一般": "Normal", "困难": "Hard" };
