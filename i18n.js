@@ -5,6 +5,7 @@
 
   const ENGLISH = {
     "寻机头": "Plane Head Hunt",
+    "寻机头 Plane Head Hunt｜在线逻辑推理与双人对战游戏": "Plane Head Hunt | Online Logic Puzzle & Two-Player Game",
     "空域推理游戏": "Airspace Deduction Game",
     "01 号航站楼": "Terminal 01",
     "一架飞机正从微缩机场跑道起飞": "A plane taking off from a miniature airport runway",

@@ -6,6 +6,7 @@ A bilingual browser puzzle game about hiding aircraft and finding every enemy pl
 
 ## Play
 
+- Official website: <https://planeheadhunt.xyz/>
 - GitHub Pages: <https://mirror66666.github.io/plane-head-hunt/>
 - Repository: <https://github.com/MIRROR66666/plane-head-hunt>
 
@@ -46,4 +47,3 @@ assets/vendor/   Browser dependencies
 3. Test desktop and mobile flows before merging.
 4. Merge reviewed changes into `main` to trigger deployment.
 5. Create a version tag for each public release.
-
