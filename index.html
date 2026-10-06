@@ -8,7 +8,7 @@
     <meta http-equiv="Pragma" content="no-cache" />
     <meta http-equiv="Expires" content="0" />
     <title>寻机头</title>
-    <link rel="stylesheet" href="styles.css?v=20260929-7" />
+    <link rel="stylesheet" href="styles.css?v=20261006-1" />
   </head>
   <body class="intro-active">
     <section id="welcomeView" class="welcome-view" aria-labelledby="welcomeTitle">
@@ -16,6 +16,10 @@
         <div class="welcome-brand">
           <span class="welcome-logo-badge" aria-hidden="true"><span id="welcomePlaneLogo" class="welcome-plane-logo"></span></span>
           <strong>空域推理游戏</strong>
+        </div>
+        <div class="language-switcher" role="group" aria-label="语言选择">
+          <button class="is-active" data-language="zh-CN" type="button" aria-pressed="true" aria-label="切换为中文">中文</button>
+          <button data-language="en" type="button" aria-pressed="false" aria-label="切换为英文">EN</button>
         </div>
       </header>
 
@@ -63,6 +67,10 @@
       <header class="tutorial-header">
         <div class="tutorial-brand"><span id="tutorialBrandLogo" aria-hidden="true"></span><strong id="tutorialTitle">寻机头 · 新手教程</strong></div>
         <div class="tutorial-header-actions">
+          <div class="language-switcher is-compact" role="group" aria-label="语言选择">
+            <button class="is-active" data-language="zh-CN" type="button" aria-pressed="true" aria-label="切换为中文">中文</button>
+            <button data-language="en" type="button" aria-pressed="false" aria-label="切换为英文">EN</button>
+          </div>
           <span id="tutorialStepCount">第 1 步 / 共 7 步</span>
           <button id="tutorialSkipButton" class="tutorial-skip" type="button">跳过教程</button>
           <button id="tutorialExitButton" class="tutorial-exit" type="button" aria-label="退出教程">×</button>
@@ -255,9 +263,15 @@
         <span class="divider" aria-hidden="true"></span>
         <span id="airspaceLabel">9 × 9 空域</span>
       </div>
-      <button class="icon-button" id="soundButton" type="button" aria-label="关闭音效" title="音效">
-        <span aria-hidden="true">◖</span>
-      </button>
+      <div class="topbar-actions">
+        <div class="language-switcher is-compact" role="group" aria-label="语言选择">
+          <button class="is-active" data-language="zh-CN" type="button" aria-pressed="true" aria-label="切换为中文">中文</button>
+          <button data-language="en" type="button" aria-pressed="false" aria-label="切换为英文">EN</button>
+        </div>
+        <button class="icon-button" id="soundButton" type="button" aria-label="关闭音效" title="音效">
+          <span aria-hidden="true">◖</span>
+        </button>
+      </div>
     </header>
 
     <main class="app-shell">
@@ -479,13 +493,24 @@
 
         <div class="combat-log" aria-live="polite">
           <span class="log-label">回报</span>
-          <i id="combatMark" class="combat-mark" aria-hidden="true" hidden></i>
-          <p id="combatMessage">请选择敌方空域中的一个未知坐标。</p>
+          <div class="combat-round-log">
+            <div class="combat-log-row">
+              <span class="combat-actor is-player">我方</span>
+              <i id="playerCombatMark" class="combat-mark is-empty" aria-hidden="true"></i>
+              <p id="playerCombatMessage">请选择敌方空域中的一个未知坐标。</p>
+            </div>
+            <div class="combat-log-row">
+              <span class="combat-actor is-enemy">对手</span>
+              <i id="enemyCombatMark" class="combat-mark is-empty" aria-hidden="true"></i>
+              <p id="enemyCombatMessage">等待对手行动。</p>
+            </div>
+          </div>
         </div>
         <div id="postGameActions" class="post-game-actions" hidden>
-          <span>本局结束，点击「本局复盘」重看每一次落点。</span>
+          <span>本局结束，可复盘、查看结算或再来一局。</span>
           <button id="openReplayButton" type="button">本局复盘</button>
           <button id="openResultButton" type="button">查看结算</button>
+          <button id="postGameRestartButton" class="post-game-restart" type="button">再来一局</button>
         </div>
       </section>
     </main>
@@ -515,13 +540,6 @@
           <span class="next-mission-label">接下来想玩哪一关</span>
           <div id="nextModeActions" class="next-mode-actions"></div>
         </div>
-        <footer class="player-feedback result-feedback" aria-label="玩家反馈联系方式">
-          <p><strong>这局玩得怎么样？</strong><span>遇到问题或有任何想法，欢迎写信告诉我。</span></p>
-          <div class="feedback-contact">
-            <a href="mailto:565516020@qq.com?subject=%E3%80%8A%E5%AF%BB%E6%9C%BA%E5%A4%B4%E3%80%8B%E6%B8%B8%E7%8E%A9%E5%8F%8D%E9%A6%88">565516020@qq.com</a>
-            <button type="button" data-copy-feedback-email>复制邮箱</button>
-          </div>
-        </footer>
       </div>
     </section>
 
@@ -621,6 +639,7 @@
     <script src="assets/vendor/three.min.js?v=20260921-2"></script>
     <script src="assets/vendor/peerjs.min.js?v=1.5.5"></script>
     <script src="airport-scene.js?v=20260924-2"></script>
-    <script src="game.js?v=20260929-5"></script>
+    <script src="i18n.js?v=20261006-1"></script>
+    <script src="game.js?v=20261005-2"></script>
   </body>
 </html>

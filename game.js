@@ -253,11 +253,14 @@ const els = {
   accuracy: document.querySelector("#accuracy"),
   enemyRemaining: document.querySelector("#enemyRemaining"),
   playerRemaining: document.querySelector("#playerRemaining"),
-  combatMark: document.querySelector("#combatMark"),
-  combatMessage: document.querySelector("#combatMessage"),
+  playerCombatMark: document.querySelector("#playerCombatMark"),
+  playerCombatMessage: document.querySelector("#playerCombatMessage"),
+  enemyCombatMark: document.querySelector("#enemyCombatMark"),
+  enemyCombatMessage: document.querySelector("#enemyCombatMessage"),
   postGameActions: document.querySelector("#postGameActions"),
   openReplayButton: document.querySelector("#openReplayButton"),
   openResultButton: document.querySelector("#openResultButton"),
+  postGameRestartButton: document.querySelector("#postGameRestartButton"),
   resultOverlay: document.querySelector("#resultOverlay"),
   resultCloseButton: document.querySelector("#resultCloseButton"),
   rulesDialog: document.querySelector("#rulesDialog"),
@@ -1405,9 +1408,8 @@ function showBattleView() {
   els.missionLabel.textContent = `${config().name} · 侦查阶段`;
   els.statusTitle.textContent = "侦查敌方空域";
   els.statusText.textContent = "点击敌方空域中的未知坐标。";
-  els.combatMark.hidden = true;
-  els.combatMark.textContent = "";
-  els.combatMessage.textContent = "请选择敌方空域中的一个未知坐标。";
+  setCombatReport("player", "请选择敌方空域中的一个未知坐标。");
+  setCombatReport("enemy", "等待对手行动。");
   els.postGameActions.hidden = true;
   renderBattleModelGuide();
   renderBattle();
@@ -1429,7 +1431,7 @@ function beginOnlineBattle(firstRole = "host") {
   state.round = 1;
   state.gameOver = false;
   showBattleView();
-  if (state.turn !== "player") els.combatMessage.textContent = "等待朋友选择侦查坐标。";
+  if (state.turn !== "player") setCombatReport("enemy", "等待朋友选择侦查坐标。");
   updateRoomStrip();
   showToast(state.turn === "player" ? "你先行动" : "房主先行动");
 }
@@ -1466,8 +1468,7 @@ function playerFire(row, col) {
     if (!multiplayer.connected || multiplayer.pendingShot) return;
     multiplayer.pendingShot = { row, col };
     state.turn = "enemy";
-    els.combatMark.hidden = true;
-    els.combatMessage.textContent = `${label(row, col)}：等待朋友回报…`;
+    setCombatReport("player", `${label(row, col)}：等待朋友回报…`);
     if (!sendRoomMessage({ type: "shot", row, col })) {
       multiplayer.pendingShot = null;
       state.turn = "player";
@@ -1482,8 +1483,7 @@ function playerFire(row, col) {
   recordHistory("player", row, col, shot);
   const resultText = shot.result === "miss" ? "击空" : shot.result === "hit" ? "击中机身" : `锁定 ${shot.headCount} 个机头`;
   const destroyed = shot.result === "head" ? `，击落敌机 ${shot.headCount} 架。` : "。";
-  showCombatMark(shot.result);
-  els.combatMessage.textContent = `${label(row, col)}：${resultText}${destroyed}`;
+  setCombatReport("player", `${label(row, col)}：${resultText}${destroyed}`, shot.result);
   playShotSound(shot.result);
   state.turn = "enemy";
   renderBattle();
@@ -1502,8 +1502,7 @@ function receiveOnlineShot({ row, col }) {
   const remaining = state.playerPlanes.filter(plane => !plane.sunk).length;
   sendRoomMessage({ type: "shot-result", row, col, result: shot.result, headCount: shot.headCount, remaining });
   const resultText = shot.result === "miss" ? "击空" : shot.result === "hit" ? "命中我方机身" : `锁定我方 ${shot.headCount} 个机头`;
-  showCombatMark(shot.result);
-  els.combatMessage.textContent = `朋友攻击 ${label(row, col)}：${resultText}。`;
+  setCombatReport("enemy", `朋友攻击 ${label(row, col)}：${resultText}。`, shot.result);
   playShotSound(shot.result);
   state.round = Math.floor((state.playerShots.size + state.enemyShots.size) / 2) + 1;
   if (remaining === 0) {
@@ -1526,8 +1525,7 @@ function receiveOnlineShotResult({ row, col, result, headCount, remaining }) {
   multiplayer.pendingShot = null;
   const resultText = result === "miss" ? "击空" : result === "hit" ? "击中机身" : `锁定 ${shot.headCount} 个机头`;
   const destroyed = result === "head" ? `，击落敌机 ${shot.headCount} 架。` : "。";
-  showCombatMark(result);
-  els.combatMessage.textContent = `${label(row, col)}：${resultText}${destroyed}`;
+  setCombatReport("player", `${label(row, col)}：${resultText}${destroyed}`, result);
   playShotSound(result);
   state.round = Math.floor((state.playerShots.size + state.enemyShots.size) / 2) + 1;
   if (state.enemyHeadsRemaining === 0) {
@@ -1592,8 +1590,7 @@ function enemyFire() {
   if (state.phase !== "battle" || state.gameOver) return;
   const [row, col] = chooseEnemyTarget();
   state.aiPendingTarget = { row, col };
-  els.combatMark.hidden = true;
-  els.combatMessage.textContent = `敌方锁定 ${label(row, col)}，正在确认落点…`;
+  setCombatReport("enemy", `敌方锁定 ${label(row, col)}，正在确认落点…`);
   renderBattle();
   enemyRevealTimer = window.setTimeout(revealEnemyFire, 300);
 }
@@ -1609,8 +1606,7 @@ function revealEnemyFire() {
   if (shot.result === "hit" && state.mode !== "easy") state.aiQueue.push(...neighbors(row, col));
   if (shot.result === "head") state.aiQueue = [];
   const resultText = shot.result === "miss" ? "击空" : shot.result === "hit" ? "命中我方机身" : `锁定我方 ${shot.headCount} 个机头`;
-  showCombatMark(shot.result);
-  els.combatMessage.textContent = `敌方攻击 ${label(row, col)}：${resultText}。`;
+  setCombatReport("enemy", `敌方攻击 ${label(row, col)}：${resultText}。`, shot.result);
   playShotSound(shot.result);
   state.round += 1;
   renderBattle();
@@ -1639,11 +1635,18 @@ function applyShots(board, shots) {
   });
 }
 
-function showCombatMark(result) {
+function setCombatReport(actor, message, result = null) {
+  const mark = actor === "player" ? els.playerCombatMark : els.enemyCombatMark;
+  const messageElement = actor === "player" ? els.playerCombatMessage : els.enemyCombatMessage;
+  messageElement.textContent = message;
+  if (!result) {
+    mark.textContent = "";
+    mark.className = "combat-mark is-empty";
+    return;
+  }
   const symbols = { miss: "·", hit: "·", head: "✹" };
-  els.combatMark.hidden = false;
-  els.combatMark.className = `combat-mark ${result}`;
-  els.combatMark.textContent = symbols[result];
+  mark.className = `combat-mark ${result}`;
+  mark.textContent = symbols[result];
 }
 
 function renderBattle() {
@@ -2027,6 +2030,7 @@ els.nextModeActions.addEventListener("click", event => {
 els.resultCloseButton.addEventListener("click", closeResultOverlay);
 els.reviewButton.addEventListener("click", openReplay);
 els.openReplayButton.addEventListener("click", openReplay);
+els.postGameRestartButton.addEventListener("click", () => restart());
 els.openResultButton.addEventListener("click", () => {
   els.postGameActions.hidden = true;
   els.resultOverlay.hidden = false;
