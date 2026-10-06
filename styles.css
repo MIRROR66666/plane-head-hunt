@@ -3319,3 +3319,97 @@ body.language-en .home-section h2 { font-family: Georgia, "Times New Roman", ser
   .home-mode-intro button,
   .home-tutorial-cta button { transition: none; }
 }
+
+/* Stable hero composition: copy and airport own separate layout regions. */
+.welcome-hero {
+  display: grid;
+  grid-template-columns: minmax(330px, 0.78fr) minmax(520px, 1.22fr);
+  align-items: stretch;
+  justify-items: stretch;
+  min-height: 360px;
+  text-align: left;
+}
+
+.welcome-copy {
+  position: relative;
+  z-index: 4;
+  left: auto;
+  top: auto;
+  max-width: none;
+  padding: 38px 12px 38px clamp(30px, 4vw, 68px);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+}
+
+.welcome-airport-scene {
+  position: relative;
+  inset: auto;
+  min-width: 0;
+  min-height: 100%;
+}
+
+#airportSceneCanvas { transform: none; }
+.runway-sign.sign-left { left: 5%; bottom: 10%; }
+.runway-sign.sign-right { right: 6%; top: 10%; }
+
+.welcome-hero h1 {
+  max-width: 100%;
+  font-size: 82px;
+  line-height: 0.98;
+}
+
+body.language-en .welcome-hero h1 {
+  width: auto;
+  min-width: 0;
+  max-width: 480px;
+  font-size: 76px;
+  line-height: 0.92;
+}
+
+@media (max-width: 1100px) {
+  .welcome-hero {
+    grid-template-columns: minmax(270px, 0.74fr) minmax(430px, 1.26fr);
+    min-height: 360px;
+  }
+  .welcome-copy { padding: 30px 8px 30px 28px; }
+  .welcome-hero h1 { font-size: 68px; }
+  body.language-en .welcome-hero h1 { min-width: 250px; font-size: 60px; }
+}
+
+@media (max-width: 760px) {
+  .welcome-hero {
+    height: auto;
+    min-height: 360px;
+    grid-template-columns: 1fr;
+    grid-template-rows: auto minmax(210px, 1fr);
+  }
+  .welcome-copy {
+    padding: 20px 20px 0;
+    justify-content: start;
+  }
+  .welcome-terminal { margin-bottom: 6px; }
+  .welcome-hero h1 { font-size: 52px; line-height: 0.96; }
+  body.language-en .welcome-hero h1 {
+    width: auto;
+    min-width: 0;
+    max-width: 100%;
+    font-size: 50px;
+    line-height: 0.92;
+  }
+  .welcome-airport-scene {
+    min-height: 210px;
+    margin-top: 0;
+  }
+  .runway-sign.sign-left { left: 6%; bottom: 7%; }
+  .runway-sign.sign-right { right: 5%; top: 5%; }
+}
+
+@media (max-width: 420px) {
+  .welcome-hero { min-height: 340px; grid-template-rows: auto minmax(195px, 1fr); }
+  .welcome-copy { padding: 17px 17px 0; }
+  .welcome-hero h1 { font-size: 48px; }
+  body.language-en .welcome-hero h1 { font-size: 45px; }
+  .welcome-airport-scene { min-height: 195px; }
+}
