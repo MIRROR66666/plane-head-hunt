@@ -11,7 +11,6 @@ if (canvas) {
   });
 
   const settledPixelRatio = Math.min(window.devicePixelRatio, 1.5);
-  const resizingPixelRatio = Math.min(window.devicePixelRatio, 1);
   renderer.setPixelRatio(settledPixelRatio);
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -289,13 +288,8 @@ if (canvas) {
 
   let resizeFrame = 0;
   let resizeSettleTimer = 0;
-  let resizing = false;
 
   const scheduleResize = () => {
-    if (!resizing) {
-      resizing = true;
-      renderer.setPixelRatio(resizingPixelRatio);
-    }
     if (!resizeFrame) {
       resizeFrame = requestAnimationFrame(() => {
         resizeFrame = 0;
@@ -304,8 +298,6 @@ if (canvas) {
     }
     window.clearTimeout(resizeSettleTimer);
     resizeSettleTimer = window.setTimeout(() => {
-      resizing = false;
-      renderer.setPixelRatio(settledPixelRatio);
       applyResize(true);
     }, 160);
   };
@@ -329,7 +321,7 @@ if (canvas) {
   };
 
   const resizeObserver = new ResizeObserver(scheduleResize);
-  resizeObserver.observe(canvas);
+  resizeObserver.observe(canvas.parentElement || canvas);
   const visibilityObserver = new IntersectionObserver(entries => {
     const visible = entries[0]?.isIntersecting ?? true;
     if (visible && !running) {
