@@ -1,0 +1,12 @@
+.DS_Store
+**/.DS_Store
+.vercel/
+node_modules/
+*.log
+
+# Editorial drafts are maintained separately from the game website.
+wechat/
+
+# Unused Three.js bundles; the site loads assets/vendor/three.min.js.
+assets/vendor/three.core.min.js
+assets/vendor/three.module.min.js
