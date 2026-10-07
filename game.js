@@ -186,6 +186,7 @@ const els = {
   homeDemoMisses: document.querySelector("#homeDemoMisses"),
   homeDemoHits: document.querySelector("#homeDemoHits"),
   homeDemoHeads: document.querySelector("#homeDemoHeads"),
+  homeDemoHistory: document.querySelector("#homeDemoHistory"),
   tutorialBrandLogo: document.querySelector("#tutorialBrandLogo"),
   gameBrandLogo: document.querySelector("#gameBrandLogo"),
   tutorialPlaneOverview: document.querySelector("#tutorialPlaneOverview"),
@@ -855,6 +856,15 @@ function renderIntroVisuals() {
   els.tutorialPlaneDirection.innerHTML = directionalModelMarkup("classic", tutorialState.direction, "tutorial-direction-shape");
   els.tutorialAttackModel.innerHTML = directionalModelMarkup("starter", "S", "tutorial-attack-shape");
   els.tutorialBattleModelShape.innerHTML = modelShapeMarkup("starter", "tutorial-battle-model-preview");
+  document.querySelectorAll("[data-home-models]").forEach(container => {
+    const mode = container.dataset.homeModels;
+    container.innerHTML = MODES[mode].models.map(modelId => `
+      <div class="home-difficulty-model">
+        ${battleModelBoardMarkup(modelId)}
+        <span>${MODELS[modelId].name}</span>
+      </div>
+    `).join("");
+  });
   renderTutorialMiniBoard(els.tutorialBattleEnemy, "enemy");
   renderTutorialMiniBoard(els.tutorialBattlePlayer, "player");
 }
@@ -891,6 +901,14 @@ function updateHomeDemoStats() {
   els.homeDemoMisses.textContent = String(results.filter(result => result === "miss").length);
   els.homeDemoHits.textContent = String(results.filter(result => result === "body").length);
   els.homeDemoHeads.textContent = String(results.filter(result => result === "head").length);
+  const history = [...homeDemoState.shots.entries()].slice(-5).reverse();
+  els.homeDemoHistory.innerHTML = history.length
+    ? history.map(([cellKey, result]) => {
+      const [row, col] = cellKey.split(",").map(Number);
+      const resultName = result === "miss" ? "击空" : result === "body" ? "机身" : "机头";
+      return `<li class="is-${result}"><b>${homeDemoLabel(row, col)}</b><span>${resultName}</span></li>`;
+    }).join("")
+    : '<li class="is-empty"><span>还没有记录，先去点一个坐标吧。</span></li>';
 }
 
 function resetHomeDemo() {
