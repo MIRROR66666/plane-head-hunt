@@ -44,7 +44,7 @@
         }
       }
     </script>
-    <link rel="stylesheet" href="styles.css?v=20261006-5" />
+    <link rel="stylesheet" href="styles.css?v=20261007-1" />
   </head>
   <body class="intro-active">
     <section id="welcomeView" class="welcome-view" aria-labelledby="welcomeTitle">
@@ -90,37 +90,51 @@
           </button>
         </div>
 
+        <button class="welcome-more-cue" type="button" data-home-scroll aria-label="向下滑动，了解更多">
+          <span aria-hidden="true">↓</span>
+          <strong>向下滑动，了解更多</strong>
+        </button>
+
         <div class="home-content">
           <section class="home-section home-deduction" aria-labelledby="homeDeductionTitle">
             <div class="home-section-heading">
-              <p class="home-kicker">先读懂回报，再锁定方向</p>
-              <h2 id="homeDeductionTitle">每一次点击，都是一条线索</h2>
-              <p>击空帮你排除位置，击中机身帮你判断飞机朝向。你不需要打完所有机身，只要找到全部机头。</p>
+              <p class="home-kicker">先来一轮迷你侦查</p>
+              <h2 id="homeDeductionTitle">点一点，线索就来了</h2>
             </div>
 
             <div class="home-deduction-demo">
               <div class="home-board-shell">
-                <div class="home-board-meta"><strong>敌方空域</strong><span>侦查记录 04</span></div>
-                <div class="home-mini-board" role="img" aria-label="由击空、机身和候选机头组成的推理棋盘示例">
-                  <span class="home-board-mark is-miss" style="--col:2;--row:2"><i></i><b>B2</b></span>
-                  <span class="home-board-mark is-body" style="--col:4;--row:4"><i></i><b>D4</b></span>
-                  <span class="home-board-mark is-body" style="--col:5;--row:4"><i></i><b>E4</b></span>
-                  <span class="home-board-mark is-candidate" style="--col:4;--row:3"><i>?</i><b>D3</b></span>
-                  <span class="home-board-mark is-head" style="--col:4;--row:2"><i></i><b>D2</b></span>
-                </div>
+                <div class="home-board-meta"><strong>敌方空域</strong><span>侦查次数 <b id="homeDemoCount">0</b></span></div>
+                <div id="homeDemoBoard" class="home-mini-board" role="group" aria-label="可点击侦查的迷你敌方空域"></div>
               </div>
 
               <div class="home-deduction-route">
-                <div class="home-plane-reference">
-                  <span id="landingPlanePreview" aria-hidden="true"></span>
-                  <div><small>本关机型</small><strong>入门型</strong></div>
+                <div class="home-demo-report" aria-live="polite">
+                  <span>侦查回报</span>
+                  <h3><b id="homeDemoCoordinate">待命</b><strong id="homeDemoResult">请选择一个坐标</strong></h3>
+                  <p id="homeDemoMessage">飞机已经藏好了。随便点一格，看看会收到什么回报。</p>
                 </div>
-                <ol>
-                  <li><b>01</b><span><strong>B2 击空</strong>排除经过这里的摆法</span></li>
-                  <li><b>02</b><span><strong>D4、E4 命中机身</strong>判断机翼横向展开</span></li>
-                  <li><b>03</b><span><strong>对照机型</strong>继续验证候选机头</span></li>
-                </ol>
-                <p class="home-result-line"><span></span>找到全部机头，立即获胜</p>
+
+                <div class="home-demo-instruments">
+                  <div class="home-plane-reference">
+                    <span id="landingPlanePreview" aria-hidden="true"></span>
+                    <div><small>本次机型</small><strong>入门型</strong></div>
+                  </div>
+                  <dl class="home-demo-stats">
+                    <div><dt>击空</dt><dd id="homeDemoMisses">0</dd></div>
+                    <div><dt>机身</dt><dd id="homeDemoHits">0</dd></div>
+                    <div><dt>机头</dt><dd id="homeDemoHeads">0</dd></div>
+                  </dl>
+                </div>
+
+                <div class="home-demo-briefing">
+                  <strong>看懂回报</strong>
+                  <p><span class="is-miss"></span>灰色是击空，可以排除这个坐标。</p>
+                  <p><span class="is-body"></span>绿色是机身，对照机型继续推断。</p>
+                  <p><span class="is-head"></span>红色是机头，找到它就能击落飞机。</p>
+                </div>
+
+                <button class="home-demo-reset" type="button" data-home-demo-reset>重新体验</button>
               </div>
             </div>
           </section>
@@ -132,22 +146,46 @@
             </div>
             <div class="home-difficulty-grid">
               <article class="home-difficulty is-easy">
-                <div><span>01</span><small>轻松入门</small></div>
+                <div><small>轻松入门</small></div>
                 <h3>简单模式</h3>
                 <strong>9 × 9</strong>
                 <p>2 架入门型飞机，可以自由调整方向，飞机之间不能重叠。</p>
+                <div class="home-difficulty-actions">
+                  <button type="button" data-home-difficulty-details="easy" aria-expanded="false">详细介绍</button>
+                  <button class="is-primary" type="button" data-home-quick-start="easy">开始游戏</button>
+                </div>
+                <div class="home-difficulty-detail" data-home-difficulty-panel="easy" hidden>
+                  <strong>适合第一次玩</strong>
+                  <p>只有一种入门机型，两架飞机不能重叠。通过机身很容易判断机头方向。</p>
+                </div>
               </article>
               <article class="home-difficulty is-normal">
-                <div><span>02</span><small>进阶推理</small></div>
+                <div><small>进阶推理</small></div>
                 <h3>一般模式</h3>
                 <strong>12 × 12</strong>
                 <p>4 架飞机，四种机型随机排列，<mark>仅机身可以重叠</mark>。</p>
+                <div class="home-difficulty-actions">
+                  <button type="button" data-home-difficulty-details="normal" aria-expanded="false">详细介绍</button>
+                  <button class="is-primary" type="button" data-home-quick-start="normal">开始游戏</button>
+                </div>
+                <div class="home-difficulty-detail" data-home-difficulty-panel="normal" hidden>
+                  <strong>机型更多，需要对照推理</strong>
+                  <p>四种机型会随机出现。机身可以互相覆盖，但机头不能与任何飞机部位重叠。</p>
+                </div>
               </article>
               <article class="home-difficulty is-hard">
-                <div><span>03</span><small>深度挑战</small></div>
+                <div><small>深度挑战</small></div>
                 <h3>困难模式</h3>
                 <strong>14 × 14</strong>
                 <p>5 架飞机，六种机型随机排列，<mark>最多一组双机头重叠</mark>。</p>
+                <div class="home-difficulty-actions">
+                  <button type="button" data-home-difficulty-details="hard" aria-expanded="false">详细介绍</button>
+                  <button class="is-primary" type="button" data-home-quick-start="hard">开始游戏</button>
+                </div>
+                <div class="home-difficulty-detail" data-home-difficulty-panel="hard" hidden>
+                  <strong>更大空域，更少偶然</strong>
+                  <p>六种机型和五架飞机组成更复杂的空域。机身可以重叠，每局最多出现一组双机头重叠。</p>
+                </div>
               </article>
             </div>
           </section>
@@ -156,7 +194,6 @@
             <div class="home-mode-intro">
               <p class="home-kicker">一个人练习，也可以叫上朋友</p>
               <h2 id="homeModesTitle">同一套规则，两种对局方式</h2>
-              <p>想立刻开始，就和电脑轮流侦查；想和朋友较量，就创建房间并分享链接。</p>
               <button type="button" data-home-start>选择对局方式 <span aria-hidden="true">→</span></button>
             </div>
             <div class="home-mode-runways">
@@ -174,7 +211,6 @@
           </section>
 
           <section class="home-section home-tutorial-cta" aria-labelledby="homeTutorialTitle">
-            <div class="home-tutorial-number" aria-hidden="true">07</div>
             <div>
               <p class="home-kicker">第一次玩也没关系</p>
               <h2 id="homeTutorialTitle">用一局真实推演学会寻机头</h2>
@@ -810,9 +846,9 @@
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
     <script src="assets/vendor/three.min.js?v=20260921-2"></script>
     <script src="assets/vendor/peerjs.min.js?v=1.5.5"></script>
-    <script src="airport-scene.js?v=20261006-2"></script>
-    <script src="i18n.js?v=20261006-2"></script>
+    <script src="airport-scene.js?v=20261007-1"></script>
+    <script src="i18n.js?v=20261007-1"></script>
     <script src="analytics.js?v=20261006-1"></script>
-    <script src="game.js?v=20261006-1"></script>
+    <script src="game.js?v=20261007-1"></script>
   </body>
 </html>

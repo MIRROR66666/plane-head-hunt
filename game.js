@@ -165,11 +165,27 @@ const replayState = {
   timer: null
 };
 
+const HOME_DEMO_SIZE = 7;
+const HOME_DEMO_HEAD = "1,3";
+const HOME_DEMO_PLANE = new Set([HOME_DEMO_HEAD, "2,2", "2,3", "2,4", "3,3", "4,3"]);
+const homeDemoState = {
+  shots: new Map(),
+  complete: false
+};
+
 const els = {
   welcomeView: document.querySelector("#welcomeView"),
   tutorialView: document.querySelector("#tutorialView"),
   welcomePlaneLogo: document.querySelector("#welcomePlaneLogo"),
   landingPlanePreview: document.querySelector("#landingPlanePreview"),
+  homeDemoBoard: document.querySelector("#homeDemoBoard"),
+  homeDemoCount: document.querySelector("#homeDemoCount"),
+  homeDemoCoordinate: document.querySelector("#homeDemoCoordinate"),
+  homeDemoResult: document.querySelector("#homeDemoResult"),
+  homeDemoMessage: document.querySelector("#homeDemoMessage"),
+  homeDemoMisses: document.querySelector("#homeDemoMisses"),
+  homeDemoHits: document.querySelector("#homeDemoHits"),
+  homeDemoHeads: document.querySelector("#homeDemoHeads"),
   tutorialBrandLogo: document.querySelector("#tutorialBrandLogo"),
   gameBrandLogo: document.querySelector("#gameBrandLogo"),
   tutorialPlaneOverview: document.querySelector("#tutorialPlaneOverview"),
@@ -841,6 +857,88 @@ function renderIntroVisuals() {
   els.tutorialBattleModelShape.innerHTML = modelShapeMarkup("starter", "tutorial-battle-model-preview");
   renderTutorialMiniBoard(els.tutorialBattleEnemy, "enemy");
   renderTutorialMiniBoard(els.tutorialBattlePlayer, "player");
+}
+
+function homeDemoLabel(row, col) {
+  return `${COLUMNS[col]}${row + 1}`;
+}
+
+function renderHomeDemoBoard() {
+  const columnLabels = Array.from({ length: HOME_DEMO_SIZE }, (_, col) =>
+    `<span class="home-board-axis" aria-hidden="true">${COLUMNS[col]}</span>`
+  ).join("");
+  const rows = Array.from({ length: HOME_DEMO_SIZE }, (_, row) => {
+    const cells = Array.from({ length: HOME_DEMO_SIZE }, (_, col) => {
+      const cellKey = key(row, col);
+      const result = homeDemoState.shots.get(cellKey);
+      const revealPlane = homeDemoState.complete && HOME_DEMO_PLANE.has(cellKey);
+      const classNames = ["home-demo-cell"];
+      if (result) classNames.push(`is-${result}`);
+      if (revealPlane) classNames.push("is-revealed-plane");
+      const resultName = result === "miss" ? "击空" : result === "body" ? "命中机身" : result === "head" ? "命中机头" : "";
+      const coordinate = homeDemoLabel(row, col);
+      const ariaLabel = resultName ? `${coordinate} ${resultName}` : `侦查 ${coordinate}`;
+      return `<button class="${classNames.join(" ")}" type="button" data-home-demo-row="${row}" data-home-demo-col="${col}" aria-label="${ariaLabel}" ${result || homeDemoState.complete ? "disabled" : ""}></button>`;
+    }).join("");
+    return `<span class="home-board-axis" aria-hidden="true">${row + 1}</span>${cells}`;
+  }).join("");
+  els.homeDemoBoard.innerHTML = `<span class="home-board-axis" aria-hidden="true"></span>${columnLabels}${rows}`;
+}
+
+function updateHomeDemoStats() {
+  const results = [...homeDemoState.shots.values()];
+  els.homeDemoCount.textContent = String(results.length);
+  els.homeDemoMisses.textContent = String(results.filter(result => result === "miss").length);
+  els.homeDemoHits.textContent = String(results.filter(result => result === "body").length);
+  els.homeDemoHeads.textContent = String(results.filter(result => result === "head").length);
+}
+
+function resetHomeDemo() {
+  homeDemoState.shots.clear();
+  homeDemoState.complete = false;
+  els.homeDemoCoordinate.textContent = "待命";
+  els.homeDemoResult.textContent = "请选择一个坐标";
+  els.homeDemoMessage.textContent = "飞机已经藏好了。随便点一格，看看会收到什么回报。";
+  updateHomeDemoStats();
+  renderHomeDemoBoard();
+}
+
+function playHomeDemoShot(row, col) {
+  if (homeDemoState.complete || homeDemoState.shots.has(key(row, col))) return;
+  const cellKey = key(row, col);
+  const coordinate = homeDemoLabel(row, col);
+  const result = cellKey === HOME_DEMO_HEAD ? "head" : HOME_DEMO_PLANE.has(cellKey) ? "body" : "miss";
+  homeDemoState.shots.set(cellKey, result);
+  homeDemoState.complete = result === "head";
+  els.homeDemoCoordinate.textContent = coordinate;
+  if (result === "miss") {
+    els.homeDemoResult.textContent = "击空，排除一格";
+    els.homeDemoMessage.textContent = "这里没有飞机。换一个坐标，继续缩小范围。";
+  } else if (result === "body") {
+    els.homeDemoResult.textContent = "命中机身";
+    els.homeDemoMessage.textContent = "飞机经过这里。对照入门型的形状，继续推断机头方向。";
+  } else {
+    els.homeDemoResult.textContent = "找到机头";
+    els.homeDemoMessage.textContent = "命中机头，飞机已击落。正式对局中，找到全部机头就能获胜。";
+  }
+  updateHomeDemoStats();
+  renderHomeDemoBoard();
+  playShotSound(result === "body" ? "hit" : result);
+}
+
+function startHomeSoloMode(mode) {
+  if (!MODES[mode]) return;
+  if (isMultiplayer()) disconnectMultiplayer({ keepView: true });
+  state.playMode = "solo";
+  state.enemyHeadsRemaining = null;
+  document.body.classList.remove("intro-active");
+  els.welcomeView.hidden = true;
+  els.tutorialView.hidden = true;
+  setMode(mode, { broadcast: false, announce: false });
+  returnToSetup(false, mode, { broadcast: false });
+  updateOnlineControls();
+  window.scrollTo({ top: 0, behavior: "auto" });
+  playTone(360, 0.08);
 }
 
 function enterGame() {
@@ -1929,6 +2027,36 @@ document.addEventListener("keydown", event => {
 });
 els.welcomeStartButton.addEventListener("click", () => els.playModeDialog.showModal());
 els.welcomeTutorialButton.addEventListener("click", openTutorial);
+document.querySelectorAll("[data-home-scroll]").forEach(button => {
+  button.addEventListener("click", () => {
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    document.querySelector("#homeDeductionTitle")?.closest(".home-section")?.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
+  });
+});
+els.homeDemoBoard.addEventListener("click", event => {
+  const cell = event.target.closest("[data-home-demo-row]");
+  if (!cell) return;
+  playHomeDemoShot(Number(cell.dataset.homeDemoRow), Number(cell.dataset.homeDemoCol));
+});
+document.querySelectorAll("[data-home-demo-reset]").forEach(button => button.addEventListener("click", resetHomeDemo));
+document.querySelectorAll("[data-home-difficulty-details]").forEach(button => {
+  button.addEventListener("click", () => {
+    const mode = button.dataset.homeDifficultyDetails;
+    const panel = document.querySelector(`[data-home-difficulty-panel="${mode}"]`);
+    const willOpen = panel.hidden;
+    document.querySelectorAll("[data-home-difficulty-panel]").forEach(item => { item.hidden = true; });
+    document.querySelectorAll("[data-home-difficulty-details]").forEach(item => {
+      item.setAttribute("aria-expanded", "false");
+      item.textContent = "详细介绍";
+    });
+    panel.hidden = !willOpen;
+    button.setAttribute("aria-expanded", String(willOpen));
+    button.textContent = willOpen ? "收起介绍" : "详细介绍";
+  });
+});
+document.querySelectorAll("[data-home-quick-start]").forEach(button => {
+  button.addEventListener("click", () => startHomeSoloMode(button.dataset.homeQuickStart));
+});
 document.querySelectorAll("[data-home-start]").forEach(button => {
   button.addEventListener("click", () => els.playModeDialog.showModal());
 });
@@ -2121,6 +2249,7 @@ window.addEventListener("pagehide", () => {
 });
 
 renderIntroVisuals();
+resetHomeDemo();
 renderModelPicker();
 renderBattleModelGuide();
 buildBoards();

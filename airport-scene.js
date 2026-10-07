@@ -175,8 +175,10 @@ if (canvas) {
     return cloud;
   };
 
-  const cloudA = createCloud(-5.6, 4.0, -5.8, 1.15);
+  const cloudA = createCloud(0, 0, -28, 1.15);
   const cloudB = createCloud(5.1, 5.7, -6.8, 0.88);
+  let cloudAAnchorX = 0;
+  let cloudAAnchorY = 0;
   let cloudBAnchorX = 5.1;
   let cloudBAnchorY = 5.7;
 
@@ -255,7 +257,7 @@ if (canvas) {
   camera.position.set(11.5, 9.5, 13.5);
   camera.lookAt(0, 0.8, 0);
   scene.add(camera);
-  camera.add(cloudB);
+  camera.add(cloudA, cloudB);
 
   let renderedWidth = 0;
   let renderedHeight = 0;
@@ -275,9 +277,12 @@ if (canvas) {
     camera.top = viewHeight / 2;
     camera.bottom = -viewHeight / 2;
     camera.updateProjectionMatrix();
+    cloudAAnchorX = camera.left + (camera.right - camera.left) * 0.25;
+    cloudAAnchorY = camera.bottom + (camera.top - camera.bottom) * 0.73;
+    cloudA.position.set(cloudAAnchorX, cloudAAnchorY, -28);
     const cloudBHorizontalAnchor = width < 600 ? 0.68 : 0.74;
     cloudBAnchorX = camera.left + (camera.right - camera.left) * cloudBHorizontalAnchor;
-    cloudBAnchorY = camera.bottom + (camera.top - camera.bottom) * 0.86;
+    cloudBAnchorY = camera.bottom + (camera.top - camera.bottom) * 0.82;
     cloudB.position.set(cloudBAnchorX, cloudBAnchorY, -28);
     if (resizeBuffer && (width !== renderedWidth || height !== renderedHeight)) {
       renderedWidth = width;
@@ -313,7 +318,7 @@ if (canvas) {
       plane.position.y = 3.2 + Math.sin(elapsed * 0.9) * 0.12;
       plane.rotation.z = 0.06 + Math.sin(elapsed * 0.7) * 0.025;
       propeller.rotation.x = elapsed * 11;
-      cloudA.position.x = -5.6 + Math.sin(elapsed * 0.12) * 0.22;
+      cloudA.position.x = cloudAAnchorX + Math.sin(elapsed * 0.12) * 0.22;
       cloudB.position.x = cloudBAnchorX + Math.sin(elapsed * 0.1 + 2) * 0.18;
     }
     renderer.render(scene, camera);
