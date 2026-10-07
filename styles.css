@@ -3947,3 +3947,17 @@ body.language-en .welcome-hero h1 {
   .home-difficulty-actions button { transition: none; }
   .home-difficulty > .home-difficulty-detail { animation: none; }
 }
+
+/* Keep the complete home entry visible when desktop windows grow taller. */
+@media (min-width: 761px) {
+  .welcome-main {
+    min-height: auto;
+    grid-template-rows: auto auto auto auto auto auto;
+    align-content: start;
+  }
+
+  .welcome-hero {
+    height: clamp(330px, calc(100dvh - 390px), 560px);
+    min-height: 330px;
+  }
+}

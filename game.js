@@ -955,16 +955,34 @@ function startHomeSoloMode(mode) {
   setMode(mode, { broadcast: false, announce: false });
   returnToSetup(false, mode, { broadcast: false });
   updateOnlineControls();
-  window.scrollTo({ top: 0, behavior: "auto" });
+  queuePageScrollReset();
   playTone(360, 0.08);
+}
+
+let pageScrollResetFrame = 0;
+let difficultyResizeResetTimer = 0;
+
+function resetPageScroll() {
+  document.documentElement.scrollTop = 0;
+  document.body.scrollTop = 0;
+  window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+}
+
+function queuePageScrollReset() {
+  cancelAnimationFrame(pageScrollResetFrame);
+  resetPageScroll();
+  pageScrollResetFrame = requestAnimationFrame(() => {
+    resetPageScroll();
+    pageScrollResetFrame = 0;
+  });
 }
 
 function enterGame() {
   document.body.classList.remove("intro-active");
   els.welcomeView.hidden = true;
   els.tutorialView.hidden = true;
-  window.scrollTo({ top: 0, behavior: "auto" });
   if (state.phase === "setup") showDifficultySelection();
+  queuePageScrollReset();
   if (!isMultiplayer() && state.phase === "battle" && state.turn === "enemy" && !state.gameOver && !enemyFireTimer) scheduleEnemyFire();
   playTone(360, 0.08);
 }
@@ -980,6 +998,7 @@ function showDifficultySelection() {
   els.statusTitle.textContent = "选择本局空域";
   els.statusText.textContent = "确认难度与重叠规则后，再进入布阵。";
   updateOnlineControls();
+  queuePageScrollReset();
 }
 
 function showSetupStage() {
@@ -990,7 +1009,7 @@ function showSetupStage() {
   els.missionLabel.textContent = "布阵阶段";
   els.statusTitle.textContent = "把飞机藏进空域";
   renderSetup();
-  window.scrollTo({ top: 0, behavior: "auto" });
+  queuePageScrollReset();
 }
 
 function showWelcome() {
@@ -1001,13 +1020,21 @@ function showWelcome() {
   els.tutorialView.hidden = true;
   els.welcomeView.hidden = false;
   els.welcomeView.scrollTop = 0;
+  queuePageScrollReset();
 }
 
 function exitTutorial() {
   els.tutorialView.hidden = true;
   els.welcomeView.hidden = false;
   els.welcomeView.scrollTop = 0;
+  queuePageScrollReset();
 }
+
+window.addEventListener("resize", () => {
+  if (!document.body.classList.contains("difficulty-active")) return;
+  window.clearTimeout(difficultyResizeResetTimer);
+  difficultyResizeResetTimer = window.setTimeout(queuePageScrollReset, 120);
+});
 
 function finishTutorial() {
   setMode("easy", { announce: false });
